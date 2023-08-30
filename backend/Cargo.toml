@@ -1,0 +1,14 @@
+[package]
+name = "transactionfee-info-backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = "1.0.188"
+diesel = { version = "2.1.0", features = ["sqlite", "64-column-tables"] }
+bitcoincore-rest = "3.0.1"
+tokio = {version = "1.32.0", features = ["rt", "rt-multi-thread", "macros"] }
+chrono = "0.4.26"
+rawtx-rs = {git = "https://github.com/0xB10C/rawtx-rs", branch = "master" } #"0.1.4"
