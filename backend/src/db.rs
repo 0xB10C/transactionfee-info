@@ -1,5 +1,5 @@
 use crate::schema;
-use crate::stats::{BlockStats, InputStats, OutputStats, Stats, TxStats};
+use crate::stats::{BlockStats, InputStats, OutputStats, Stats, TxStats, ScriptStats};
 use diesel::prelude::*;
 use diesel::sql_query;
 use diesel::sql_types::Text;
@@ -36,6 +36,8 @@ pub fn insert_stats(conn: &mut SqliteConnection, stats: &Vec<Stats>) {
     insert_block_stats(conn, &stats.iter().map(|s| s.block.clone()).collect());
     insert_tx_stats(conn, &stats.iter().map(|s| s.tx.clone()).collect());
     insert_input_stats(conn, &stats.iter().map(|s| s.input.clone()).collect());
+    insert_output_stats(conn, &stats.iter().map(|s| s.output.clone()).collect());
+    insert_script_stats(conn, &stats.iter().map(|s| s.script.clone()).collect());
 }
 
 fn insert_block_stats(conn: &mut SqliteConnection, stats: &Vec<BlockStats>) {
@@ -114,6 +116,28 @@ fn insert_output_stats(conn: &mut SqliteConnection, stats: &Vec<OutputStats>) {
             diesel::insert_into(output_stats::table)
                 .values(stat)
                 .on_conflict(output_stats::height)
+                .do_update()
+                .set(stat)
+                .execute(conn)
+                .unwrap(); // TODO:
+        }
+    }
+}
+
+
+fn insert_script_stats(conn: &mut SqliteConnection, stats: &Vec<ScriptStats>) {
+    use crate::schema::script_stats;
+
+    if let Err(e) = diesel::insert_into(script_stats::table)
+        .values(stats)
+        .execute(conn)
+    {
+        println!("Falling back to upserts..#######################################");
+        for stat in stats.iter() {
+            // TODO: log
+            diesel::insert_into(script_stats::table)
+                .values(stat)
+                .on_conflict(script_stats::height)
                 .do_update()
                 .set(stat)
                 .execute(conn)

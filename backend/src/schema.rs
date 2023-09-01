@@ -148,6 +148,7 @@ diesel::table! {
         pubkeys_uncompressed_inputs -> Integer,
         pubkeys_compressed_outputs -> Integer,
         pubkeys_uncompressed_outputs -> Integer,
+        sigs_schnorr -> Integer,
         sigs_ecdsa -> Integer,
         sigs_ecdsa_not_strict_der -> Integer,
         sigs_ecdsa_strict_der -> Integer,

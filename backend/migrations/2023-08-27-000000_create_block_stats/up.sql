@@ -73,6 +73,7 @@ CREATE TABLE script_stats (
 	pubkeys_compressed_outputs        INTEGER   NOT NULL,
 	pubkeys_uncompressed_outputs      INTEGER   NOT NULL,
 
+	sigs_schnorr                      INTEGER   NOT NULL,
 	sigs_ecdsa                        INTEGER   NOT NULL,
 	sigs_ecdsa_not_strict_der         INTEGER   NOT NULL,
 	sigs_ecdsa_strict_der             INTEGER   NOT NULL,
