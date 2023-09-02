@@ -4,13 +4,24 @@ pub mod stats;
 
 use bitcoincore_rest::{bitcoin::Network, RestApi, RestClient};
 use stats::Stats;
+use std::io::Write;
 use tokio::sync::mpsc;
+
+use crate::db::TableInfo;
+
+const METRIC_TABLES: [&str; 5] = [
+    "block_stats",
+    "tx_stats",
+    "script_stats",
+    "input_stats",
+    "output_stats",
+];
+const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 5] = ["height", "date", "version", "nonce", "bits"];
 
 #[tokio::main]
 async fn main() {
-    //list_column_names(connection);
-
-    collect_statistics().await;
+    write_csv_files();
+    //collect_statistics().await;
 }
 
 async fn collect_statistics() {
@@ -61,14 +72,45 @@ async fn collect_statistics() {
     while let Some(stat) = stat_receiver.recv().await {
         stat_buffer.push(stat);
         if stat_buffer.len() >= 100 {
-            println!("writing to db.......................");
             db::insert_stats(connection, &stat_buffer);
             stat_buffer.clear();
-            println!("written to db.........................");
         }
     }
     db::insert_stats(connection, &stat_buffer);
     stat_buffer.clear();
 }
 
-async fn write_csv_files() {}
+fn write_csv_files() {
+    let connection = &mut db::establish_connection();
+
+    // TODO: write date.csv
+
+    for table in METRIC_TABLES.iter() {
+        let columns = db::list_column_names(connection, table);
+
+        // filter out columns that aren't metrics and we don't want to create csv files for
+        let columns_filtered: Vec<&TableInfo> = columns
+            .iter()
+            .filter(|col| !COLUMN_NAMES_THAT_ARENT_METRICS.contains(&&col.name[..]))
+            .collect();
+
+        for column in columns_filtered.iter().map(|col| col.name.clone()) {
+            println!("Generating metrics for '{}' in table '{}'.", column, table);
+            let avg_and_sum = db::column_sum_and_avg_by_date(connection, &column, table);
+
+            let mut avg_file = std::fs::File::create(format!("csv/{}_avg.csv", column)).unwrap();
+            let avg_content: String = avg_and_sum
+                .iter()
+                .map(|aas| format!("{:.4}\n", aas.avg))
+                .collect();
+            avg_file.write_all(avg_content.as_bytes()).unwrap();
+
+            let mut sum_file = std::fs::File::create(format!("csv/{}_sum.csv", column)).unwrap();
+            let sum_content: String = avg_and_sum
+                .iter()
+                .map(|aas| format!("{}\n", aas.sum))
+                .collect();
+            sum_file.write_all(sum_content.as_bytes()).unwrap();
+        }
+    }
+}

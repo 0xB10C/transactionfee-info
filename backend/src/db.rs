@@ -1,12 +1,12 @@
 use crate::schema;
-use crate::stats::{BlockStats, InputStats, OutputStats, Stats, TxStats, ScriptStats};
+use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, Stats, TxStats};
 use diesel::prelude::*;
 use diesel::sql_query;
-use diesel::sql_types::Text;
+use diesel::sql_types::{BigInt, Float, Text};
 use diesel::sqlite::SqliteConnection;
 
 #[derive(Debug, QueryableByName)]
-struct TableInfo {
+pub struct TableInfo {
     #[diesel(sql_type = Text)]
     pub name: String,
 }
@@ -25,11 +25,32 @@ pub fn get_db_block_height(
         .first(conn);
 }
 
-fn list_column_names(conn: &mut SqliteConnection) {
-    let columns: Vec<TableInfo> = sql_query("PRAGMA table_info(block_stats)")
+pub fn list_column_names(conn: &mut SqliteConnection, table: &str) -> Vec<TableInfo> {
+    let columns: Vec<TableInfo> = sql_query(format!("PRAGMA table_info({})", table))
         .get_results(conn)
         .unwrap();
-    println!("{:?}", columns);
+    return columns;
+}
+
+#[derive(Debug, QueryableByName)]
+pub struct AvgAndSum {
+    #[diesel(sql_type = Float)]
+    pub avg: f32,
+    #[diesel(sql_type = BigInt)]
+    pub sum: i64,
+}
+
+pub fn column_sum_and_avg_by_date(
+    conn: &mut SqliteConnection,
+    colname: &str,
+    table: &str,
+) -> Vec<AvgAndSum> {
+    sql_query(format!(
+        "SELECT avg({}) as avg, sum({}) as sum FROM {} GROUP BY date",
+        colname, colname, table
+    ))
+    .get_results(conn)
+    .unwrap()
 }
 
 pub fn insert_stats(conn: &mut SqliteConnection, stats: &Vec<Stats>) {
@@ -123,7 +144,6 @@ fn insert_output_stats(conn: &mut SqliteConnection, stats: &Vec<OutputStats>) {
         }
     }
 }
-
 
 fn insert_script_stats(conn: &mut SqliteConnection, stats: &Vec<ScriptStats>) {
     use crate::schema::script_stats;
