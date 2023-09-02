@@ -20,8 +20,8 @@ const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 5] = ["height", "date", "version",
 
 #[tokio::main]
 async fn main() {
+    collect_statistics().await;
     write_csv_files();
-    //collect_statistics().await;
 }
 
 async fn collect_statistics() {

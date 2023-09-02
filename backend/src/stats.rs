@@ -18,7 +18,7 @@ impl Stats {
     pub fn from_block_and_height(block: Block, height: i64) -> Stats {
         let naive_timestamp =
             NaiveDateTime::from_timestamp_millis(block.header.time as i64 * 1000).unwrap();
-        let datetime: DateTime<Utc> = DateTime::from_utc(naive_timestamp, Utc);
+        let datetime: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_timestamp, Utc);
         let date = datetime.format("%Y-%m-%d").to_string();
 
         // rawtx-rs transaction infos excluding the coinbase transaction
@@ -144,7 +144,7 @@ impl BlockStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
 #[diesel(table_name = crate::schema::tx_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -194,113 +194,97 @@ impl TxStats {
         date: String,
         tx_infos: &Vec<TxInfo>,
     ) -> TxStats {
+        let mut s = TxStats::default();
+
         let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid()).collect();
 
-        TxStats {
-            height: height,
-            date: date.to_string(),
+        s.height = height;
+        s.date = date;
 
-            tx_version_1: block.txdata.iter().filter(|tx| tx.version == 1).count() as i32,
-            tx_version_2: block.txdata.iter().filter(|tx| tx.version == 2).count() as i32,
-            tx_version_3: block.txdata.iter().filter(|tx| tx.version == 3).count() as i32,
-            tx_version_unknown: block.txdata.iter().filter(|tx| tx.version > 3).count() as i32,
+        for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
+            match tx.version {
+                1 => s.tx_version_1 += 1,
+                2 => s.tx_version_2 += 1,
+                3 => s.tx_version_3 += 1,
+                _ => s.tx_version_unknown += 1,
+            }
 
-            tx_output_amount: tx_infos
-                .iter()
-                .map(|ti| ti.output_value_sum().to_sat())
-                .sum::<u64>() as i64,
+            s.tx_output_amount += tx_info.output_value_sum().to_sat() as i64;
 
-            tx_spending_segwit: tx_infos.iter().filter(|ti| ti.is_spending_segwit()).count() as i32,
-            tx_spending_only_segwit: tx_infos
-                .iter()
-                .filter(|ti| ti.is_only_spending_segwit())
-                .count() as i32,
-            tx_spending_only_legacy: tx_infos
-                .iter()
-                .filter(|ti| ti.is_only_spending_legacy())
-                .count() as i32,
-            tx_spending_only_taproot: tx_infos
-                .iter()
-                .filter(|ti| ti.is_only_spending_taproot())
-                .count() as i32,
-            tx_spending_nested_segwit: tx_infos
-                .iter()
-                .filter(|ti| ti.is_spending_nested_segwit())
-                .count() as i32,
-            tx_spending_native_segwit: tx_infos
-                .iter()
-                .filter(|ti| ti.is_spending_native_segwit())
-                .count() as i32,
-            tx_spending_segwit_and_legacy: tx_infos
-                .iter()
-                .filter(|ti| ti.is_spending_segwit_and_legacy())
-                .count() as i32,
+            if tx_info.is_spending_segwit() {
+                s.tx_spending_segwit += 1;
+                if tx_info.is_spending_native_segwit() {
+                    s.tx_spending_native_segwit += 1;
+                }
+                if tx_info.is_spending_nested_segwit() {
+                    s.tx_spending_nested_segwit += 1;
+                }
+                if tx_info.is_spending_taproot() {
+                    s.tx_spending_taproot += 1;
+                }
+            }
 
-            tx_spending_taproot: tx_infos
-                .iter()
-                .filter(|ti| ti.is_spending_taproot())
-                .count() as i32,
+            if tx_info.is_spending_segwit_and_legacy() {
+                s.tx_spending_segwit_and_legacy += 1;
+            }
 
-            tx_bip69_compliant: tx_infos.iter().filter(|ti| ti.is_bip69_compliant()).count() as i32,
-            tx_signaling_explicit_rbf: tx_infos
-                .iter()
-                .filter(|ti| ti.is_signaling_explicit_rbf_replicability())
-                .count() as i32,
+            if tx_info.is_only_spending_legacy() {
+                s.tx_spending_only_legacy += 1;
+            } else if tx_info.is_only_spending_segwit() {
+                s.tx_spending_only_segwit += 1;
+                if tx_info.is_only_spending_taproot() {
+                    s.tx_spending_only_taproot += 1;
+                }
+            }
 
-            tx_1_input: block.txdata.iter().filter(|tx| tx.input.len() == 1).count() as i32,
-            tx_1_output: block
-                .txdata
-                .iter()
-                .filter(|tx| tx.output.len() == 1)
-                .count() as i32,
-            tx_1_input_1_output: block
-                .txdata
-                .iter()
-                .filter(|tx| tx.input.len() == 1 && tx.output.len() == 1)
-                .count() as i32,
-            tx_1_input_2_output: block
-                .txdata
-                .iter()
-                .filter(|tx| tx.input.len() == 1 && tx.output.len() == 2)
-                .count() as i32,
-            tx_spending_newly_created_utxos: block
-                .txdata
-                .iter()
-                .filter(|tx| {
-                    tx.input
-                        .iter()
-                        .any(|i| txids_in_this_block.contains(&i.previous_output.txid))
-                })
-                .count() as i32,
+            if tx_info.is_bip69_compliant() {
+                s.tx_bip69_compliant += 1;
+            }
 
-            tx_timelock_height: block
-                .txdata
+            if tx_info.is_signaling_explicit_rbf_replicability() {
+                s.tx_signaling_explicit_rbf += 1;
+            }
+
+            if tx.input.len() == 1 {
+                s.tx_1_input += 1;
+                match tx.output.len() {
+                    1 => s.tx_1_input_1_output += 1,
+                    2 => s.tx_1_input_2_output += 1,
+                    _ => (),
+                }
+            }
+            if tx.output.len() == 1 {
+                s.tx_1_output += 1;
+            }
+
+            if tx
+                .input
                 .iter()
-                .map(|tx| tx.lock_time.is_block_height())
-                .count() as i32,
-            tx_timelock_timestamp: block
-                .txdata
-                .iter()
-                .map(|tx| tx.lock_time.is_block_time())
-                .count() as i32,
-            tx_timelock_not_enforced: block
-                .txdata
-                .iter()
-                .map(|tx| tx.lock_time.to_consensus_u32() > 0 && tx.is_lock_time_enabled())
-                .count() as i32,
-            tx_timelock_too_high: block
-                .txdata
-                .iter()
-                .map(|tx| {
-                    tx.lock_time.is_block_height()
-                        && tx.lock_time.to_consensus_u32() > height as u32
-                })
-                .count() as i32,
+                .any(|i| txids_in_this_block.contains(&i.previous_output.txid))
+            {
+                s.tx_spending_newly_created_utxos += 1;
+            }
+
+            if tx.lock_time.is_block_height() {
+                s.tx_timelock_height += 1;
+            } else if tx.lock_time.is_block_time() {
+                s.tx_timelock_timestamp += 1;
+            }
+
+            if tx.lock_time.to_consensus_u32() > 0 && tx.is_lock_time_enabled() {
+                s.tx_timelock_not_enforced += 1;
+            }
+
+            if tx.lock_time.is_block_height() && tx.lock_time.to_consensus_u32() > height as u32 {
+                s.tx_timelock_too_high += 1;
+            }
         }
+
+        return s;
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
 #[diesel(table_name = crate::schema::script_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -353,481 +337,106 @@ impl ScriptStats {
         date: String,
         tx_infos: &Vec<TxInfo>,
     ) -> ScriptStats {
-        ScriptStats {
-            height,
-            date,
+        let mut s = ScriptStats::default();
 
-            pubkeys: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos.iter().map(|i| i.pubkey_stats.len()).count()
-                        + ti.output_infos.iter().map(|o| o.pubkey_stats.len()).count()
-                })
-                .sum::<usize>() as i32,
-            pubkeys_compressed: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| i.pubkey_stats.iter().filter(|pks| pks.compressed).count())
-                        .count()
-                        + ti.output_infos
-                            .iter()
-                            .map(|o| o.pubkey_stats.iter().filter(|pks| pks.compressed).count())
-                            .count()
-                })
-                .sum::<usize>() as i32,
-            pubkeys_uncompressed: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| i.pubkey_stats.iter().filter(|pks| !pks.compressed).count())
-                        .count()
-                        + ti.output_infos
-                            .iter()
-                            .map(|o| o.pubkey_stats.iter().filter(|pks| !pks.compressed).count())
-                            .count()
-                })
-                .sum::<usize>() as i32,
-            pubkeys_compressed_inputs: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| i.pubkey_stats.iter().filter(|pks| pks.compressed).count())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            pubkeys_uncompressed_inputs: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| i.pubkey_stats.iter().filter(|pks| !pks.compressed).count())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            pubkeys_compressed_outputs: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .map(|o| o.pubkey_stats.iter().filter(|pks| pks.compressed).count())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            pubkeys_uncompressed_outputs: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .map(|o| o.pubkey_stats.iter().filter(|pks| !pks.compressed).count())
-                        .count()
-                })
-                .sum::<usize>() as i32,
+        let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid()).collect();
 
-            sigs_schnorr: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| matches!(si.signature, SignatureType::Schnorr(_)))
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| matches!(si.signature, SignatureType::Ecdsa(_)))
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_not_strict_der: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.was_der_encoded
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_strict_der: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && !si.was_der_encoded
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
+        s.height = height;
+        s.date = date;
 
-            sigs_ecdsa_length_less_70byte: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.length < 70
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_length_70byte: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.length == 70
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_length_71byte: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.length == 71
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_length_72byte: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.length == 72
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_length_73byte: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.length == 73
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_length_74byte: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.length == 74
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
+        for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
+            for input in tx_info.input_infos.iter() {
+                // pubkey stats
+                for pubkey in input.pubkey_stats.iter() {
+                    s.pubkeys += 1;
+                    if pubkey.compressed {
+                        s.pubkeys_compressed += 1;
+                        s.pubkeys_compressed_inputs += 1;
+                    } else {
+                        s.pubkeys_uncompressed += 1;
+                        s.pubkeys_uncompressed_inputs += 1;
+                    }
+                }
 
-            sigs_ecdsa_low_r: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_)) && si.low_r()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_high_r: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_)) && !si.low_r()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_low_s: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_)) && si.low_s()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_high_s: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_)) && !si.low_s()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_high_rs: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && !si.low_r()
-                                        && !si.low_s()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_low_rs: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.low_r()
-                                        && si.low_s()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_low_r_high_s: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && si.low_r()
-                                        && !si.low_s()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_ecdsa_high_r_low_s: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| {
-                                    matches!(si.signature, SignatureType::Ecdsa(_))
-                                        && !si.low_r()
-                                        && si.low_s()
-                                })
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
+                // signature stats
+                for sig in input.signature_info.iter() {
+                    if matches!(sig.signature, SignatureType::Schnorr(_)) {
+                        s.sigs_schnorr += 1;
+                    } else if matches!(sig.signature, SignatureType::Ecdsa(_)) {
+                        s.sigs_ecdsa += 1;
+                        if sig.was_der_encoded {
+                            s.sigs_ecdsa_strict_der += 1;
+                        } else {
+                            s.sigs_ecdsa_not_strict_der += 1;
+                        }
+                        match sig.length {
+                            8..=69 => s.sigs_ecdsa_length_less_70byte += 1,
+                            70 => s.sigs_ecdsa_length_70byte += 1,
+                            71 => s.sigs_ecdsa_length_71byte += 1,
+                            72 => s.sigs_ecdsa_length_72byte += 1,
+                            73 => s.sigs_ecdsa_length_73byte += 1,
+                            74 => s.sigs_ecdsa_length_74byte += 1,
+                            _ => println!("ECDSA signature with {} bytes..?", sig.length),
+                        }
 
-            sigs_sighashes: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| i.signature_info.len())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_sighash_all: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| si.sig_hash == 0x01)
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_sighash_none: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| si.sig_hash == 0x02)
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_sighash_single: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| si.sig_hash == 0x03)
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_sighash_all_acp: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| si.sig_hash == 0x81)
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_sighash_none_acp: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| si.sig_hash == 0x82)
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            sigs_sighash_single_acp: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .map(|i| {
-                            i.signature_info
-                                .iter()
-                                .filter(|si| si.sig_hash == 0x83)
-                                .count()
-                        })
-                        .count()
-                })
-                .sum::<usize>() as i32,
+                        let is_r_low = sig.low_r();
+                        let is_s_low = sig.low_s();
+
+                        if is_r_low {
+                            s.sigs_ecdsa_low_r += 1;
+                        } else {
+                            s.sigs_ecdsa_high_r += 1;
+                        }
+
+                        if is_s_low {
+                            s.sigs_ecdsa_low_s += 1;
+                        } else {
+                            s.sigs_ecdsa_high_s += 1;
+                        }
+
+                        if is_r_low && is_s_low {
+                            s.sigs_ecdsa_low_rs += 1;
+                        } else if !is_r_low && !is_s_low {
+                            s.sigs_ecdsa_high_rs += 1;
+                        } else if is_r_low && !is_s_low {
+                            s.sigs_ecdsa_low_r_high_s += 1;
+                        } else if !is_r_low && is_s_low {
+                            s.sigs_ecdsa_high_r_low_s += 1;
+                        }
+
+                        s.sigs_sighashes += 1;
+                        match sig.sig_hash {
+                            0x01 => s.sigs_sighash_all += 1,
+                            0x02 => s.sigs_sighash_none += 1,
+                            0x03 => s.sigs_sighash_single += 1,
+                            0x81 => s.sigs_sighash_all_acp += 1,
+                            0x82 => s.sigs_sighash_none_acp += 1,
+                            0x83 => s.sigs_sighash_single_acp += 1,
+                            _ => (),
+                        }
+                    }
+                }
+            }
+
+            for output in tx_info.output_infos.iter() {
+                // pubkey stats
+                for pubkey in output.pubkey_stats.iter() {
+                    s.pubkeys += 1;
+                    if pubkey.compressed {
+                        s.pubkeys_compressed += 1;
+                        s.pubkeys_compressed_outputs += 1;
+                    } else {
+                        s.pubkeys_uncompressed += 1;
+                        s.pubkeys_uncompressed_outputs += 1;
+                    }
+                }
+            }
         }
+        s
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
 #[diesel(table_name = crate::schema::input_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -872,235 +481,66 @@ impl InputStats {
     ) -> InputStats {
         let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid()).collect();
 
-        InputStats {
-            height,
-            date,
+        let mut s = InputStats::default();
+        s.height = height;
+        s.date = date;
 
-            inputs_spending_legacy: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_legacy())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_segwit: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_segwit())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_taproot: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_taproot())
-                        .count()
-                })
-                .sum::<usize>() as i32,
+        for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
+            for input in tx_info.input_infos.iter() {
+                if input.is_spending_legacy() {
+                    s.inputs_spending_legacy += 1;
+                }
+                if input.is_spending_segwit() {
+                    s.inputs_spending_segwit += 1;
+                }
+                if input.is_spending_taproot() {
+                    s.inputs_spending_taproot += 1;
+                }
+                if input.is_spending_nested_segwit() {
+                    s.inputs_spending_nested_segwit += 1;
+                }
+                if input.is_spending_native_segwit() {
+                    s.inputs_spending_native_segwit += 1;
+                }
+                if input.is_spending_multisig() {
+                    s.inputs_spending_multisig += 1;
+                    match input.in_type {
+                        InputType::P2ms => s.inputs_spending_p2ms_multisig += 1,
+                        InputType::P2shP2wsh => s.inputs_spending_nested_p2wsh_multisig += 1,
+                        InputType::P2wsh => s.inputs_spending_p2wsh_multisig += 1,
+                        InputType::P2sh => s.inputs_spending_p2sh_multisig += 1,
+                        _ => (),
+                    }
+                }
 
-            inputs_spending_nested_segwit: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_nested_segwit())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_native_segwit: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_native_segwit())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_multisig: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_multisig())
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_p2ms_multisig: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_multisig() && i.in_type == InputType::P2ms)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_nested_p2wsh_multisig: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_multisig() && i.in_type == InputType::P2shP2wsh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_p2wsh_multisig: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_multisig() && i.in_type == InputType::P2wsh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_spending_p2sh_multisig: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.is_spending_multisig() && i.in_type == InputType::P2sh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
+                match input.in_type {
+                    InputType::P2pk | InputType::P2pkLaxDer => s.inputs_p2pk += 1,
+                    InputType::P2pkh | InputType::P2pkhLaxDer => s.inputs_p2pkh += 1,
+                    InputType::P2shP2wpkh => s.inputs_nested_p2wpkh += 1,
+                    InputType::P2wpkh => s.inputs_p2wpkh += 1,
+                    InputType::P2ms | InputType::P2msLaxDer => s.inputs_p2ms += 1,
+                    InputType::P2sh => s.inputs_p2sh += 1,
+                    InputType::P2shP2wsh => s.inputs_nested_p2wsh += 1,
+                    InputType::P2wsh => s.inputs_p2wsh += 1,
+                    InputType::Coinbase => s.inputs_coinbase += 1,
+                    InputType::CoinbaseWitness => s.inputs_witness_coinbase += 1,
+                    InputType::P2trkp => s.inputs_p2tr_keypath += 1,
+                    InputType::P2trsp => s.inputs_p2tr_scriptpath += 1,
+                    InputType::Unknown => s.inputs_unknown += 1,
+                }
+            }
 
-            inputs_p2pk: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2pk)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_p2pkh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2pkh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_nested_p2wpkh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2shP2wpkh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_p2wpkh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2wpkh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_p2ms: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2ms)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_p2sh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2sh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_nested_p2wsh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2shP2wsh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_p2wsh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2wsh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_coinbase: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::Coinbase)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_witness_coinbase: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::CoinbaseWitness)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_p2tr_keypath: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2trkp)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_p2tr_scriptpath: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::P2trsp)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            inputs_unknown: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.input_infos
-                        .iter()
-                        .filter(|i| i.in_type == InputType::Unknown)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-
-            inputs_spend_in_same_block: block
-                .txdata
-                .iter()
-                .map(|tx| {
-                    tx.input
-                        .iter()
-                        .filter(|i| txids_in_this_block.contains(&i.previous_output.txid))
-                        .count()
-                })
-                .sum::<usize>() as i32,
+            for input in tx.input.iter() {
+                if txids_in_this_block.contains(&input.previous_output.txid) {
+                    s.inputs_spend_in_same_block += 1;
+                }
+            }
         }
+        s
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
 #[diesel(table_name = crate::schema::output_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -1136,196 +576,54 @@ impl OutputStats {
         date: String,
         tx_infos: &Vec<TxInfo>,
     ) -> OutputStats {
-        OutputStats {
-            height,
-            date,
+        let mut s = OutputStats::default();
 
-            outputs_p2pk: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::P2pk)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            outputs_p2pkh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::P2pkh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            outputs_p2wpkh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::P2wpkhV0)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            outputs_p2ms: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::P2ms)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            outputs_p2sh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::P2sh)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            outputs_p2wsh: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::P2wshV0)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            outputs_opreturn: tx_infos
-                .iter()
-                .map(|ti| ti.output_infos.iter().filter(|o| o.is_opreturn()).count())
-                .sum::<usize>() as i32,
-            outputs_p2tr: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::P2tr)
-                        .count()
-                })
-                .sum::<usize>() as i32,
-            outputs_unknown: tx_infos
-                .iter()
-                .map(|ti| {
-                    ti.output_infos
-                        .iter()
-                        .filter(|o| o.out_type == OutputType::Unknown)
-                        .count()
-                })
-                .sum::<usize>() as i32,
+        s.height = height;
+        s.date = date;
 
-            outputs_p2pk_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::P2pk)
-                            .map(|o| o.value.to_sat())
+        for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
+            for output in tx_info.output_infos.iter() {
+                match output.out_type {
+                    OutputType::P2pk => {
+                        s.outputs_p2pk += 1;
+                        s.outputs_p2pk_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_p2pkh_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::P2pkh)
-                            .map(|o| o.value.to_sat())
+                    OutputType::P2pkh => {
+                        s.outputs_p2pkh += 1;
+                        s.outputs_p2pkh_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_p2wpkh_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::P2wpkhV0)
-                            .map(|o| o.value.to_sat())
+                    OutputType::P2wpkhV0 => {
+                        s.outputs_p2wpkh += 1;
+                        s.outputs_p2wpkh_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_p2ms_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::P2ms)
-                            .map(|o| o.value.to_sat())
+                    OutputType::P2ms => {
+                        s.outputs_p2ms += 1;
+                        s.outputs_p2ms_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_p2sh_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::P2sh)
-                            .map(|o| o.value.to_sat())
+                    OutputType::P2sh => {
+                        s.outputs_p2sh += 1;
+                        s.outputs_p2sh_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_p2wsh_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::P2wshV0)
-                            .map(|o| o.value.to_sat())
+                    OutputType::P2wshV0 => {
+                        s.outputs_p2wsh += 1;
+                        s.outputs_p2wsh_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_p2tr_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::P2tr)
-                            .map(|o| o.value.to_sat())
+                    OutputType::P2tr => {
+                        s.outputs_p2tr += 1;
+                        s.outputs_p2tr_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_opreturn_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.is_opreturn())
-                            .map(|o| o.value.to_sat())
+                    OutputType::OpReturn(_) => {
+                        s.outputs_opreturn += 1;
+                        s.outputs_opreturn_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
-            outputs_unknown_amount: tx_infos
-                .iter()
-                .map(|ti| {
-                    {
-                        ti.output_infos
-                            .iter()
-                            .filter(|o| o.out_type == OutputType::Unknown)
-                            .map(|o| o.value.to_sat())
+                    OutputType::Unknown => {
+                        s.outputs_unknown += 1;
+                        s.outputs_unknown_amount += output.value.to_sat() as i64;
                     }
-                    .sum::<u64>()
-                })
-                .sum::<u64>() as i64,
+                }
+            }
         }
+        s
     }
 }
 
