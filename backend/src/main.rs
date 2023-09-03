@@ -5,6 +5,7 @@ pub mod stats;
 use bitcoincore_rest::{bitcoin::Network, RestApi, RestClient};
 use stats::Stats;
 use std::io::Write;
+use std::sync::mpsc as std_mpsc;
 use tokio::sync::mpsc;
 
 use crate::db::TableInfo;
@@ -43,7 +44,7 @@ async fn collect_statistics() {
     }
 
     let (block_sender, mut block_receiver) = mpsc::channel(12);
-    let (stat_sender, mut stat_receiver) = mpsc::channel(100);
+    let (stat_sender, stat_receiver) = std_mpsc::sync_channel(100);
 
     tokio::spawn(async move {
         for height in std::cmp::max(db_height - 10, 0)..std::cmp::max((rest_height - 6) as i64, 0) {
@@ -60,16 +61,20 @@ async fn collect_statistics() {
         while let Some((height, block_result)) = block_receiver.recv().await {
             let block = block_result.expect("block"); // TODO:
             println!("calculating stats..");
-            let stats = Stats::from_block_and_height(block, height);
-            if let Err(_) = stat_sender.send(stats).await {
-                println!("receiver dropped");
-                return;
-            }
+
+            let stat_sender_clone = stat_sender.clone();
+            rayon::spawn(move || {
+                let stats = Stats::from_block_and_height(block, height);
+                if let Err(_) = stat_sender_clone.send(stats) {
+                    println!("receiver dropped");
+                    return;
+                }
+            });
         }
     });
 
     let mut stat_buffer = Vec::with_capacity(100);
-    while let Some(stat) = stat_receiver.recv().await {
+    while let Ok(stat) = stat_receiver.recv() {
         stat_buffer.push(stat);
         if stat_buffer.len() >= 100 {
             db::insert_stats(connection, &stat_buffer);

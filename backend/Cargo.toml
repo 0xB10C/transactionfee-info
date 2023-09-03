@@ -12,3 +12,4 @@ bitcoincore-rest = "3.0.1"
 tokio = {version = "1.32.0", features = ["rt", "rt-multi-thread", "macros"] }
 chrono = "0.4.26"
 rawtx-rs = {git = "https://github.com/0xB10C/rawtx-rs", branch = "2023-08-pubkeyinfo" } #"0.1.4"
+rayon = "1.7.0"
