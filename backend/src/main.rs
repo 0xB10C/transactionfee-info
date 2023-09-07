@@ -88,7 +88,14 @@ async fn collect_statistics() {
 fn write_csv_files() {
     let connection = &mut db::establish_connection();
 
-    // TODO: write date.csv
+    println!("Generating date.csv file.");
+    let date_column = db::date_column(connection);
+    let mut date_file = std::fs::File::create("csv/date.csv").unwrap();
+    let date_content: String = date_column
+        .iter()
+        .map(|row| format!("{}\n", row.date))
+        .collect();
+    date_file.write_all(date_content.as_bytes()).unwrap();
 
     for table in METRIC_TABLES.iter() {
         let columns = db::list_column_names(connection, table);

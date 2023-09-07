@@ -339,12 +339,10 @@ impl ScriptStats {
     ) -> ScriptStats {
         let mut s = ScriptStats::default();
 
-        let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid()).collect();
-
         s.height = height;
         s.date = date;
 
-        for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
+        for (_, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
             for input in tx_info.input_infos.iter() {
                 // pubkey stats
                 for pubkey in input.pubkey_stats.iter() {
@@ -581,7 +579,7 @@ impl OutputStats {
         s.height = height;
         s.date = date;
 
-        for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
+        for (_, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
             for output in tx_info.output_infos.iter() {
                 match output.out_type {
                     OutputType::P2pk => {

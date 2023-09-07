@@ -11,6 +11,20 @@ pub struct TableInfo {
     pub name: String,
 }
 
+#[derive(Debug, QueryableByName)]
+pub struct AvgAndSum {
+    #[diesel(sql_type = Float)]
+    pub avg: f32,
+    #[diesel(sql_type = BigInt)]
+    pub sum: i64,
+}
+
+#[derive(Debug, QueryableByName)]
+pub struct DateColumn {
+    #[diesel(sql_type = Text)]
+    pub date: String,
+}
+
 pub fn establish_connection() -> SqliteConnection {
     let database_url = "db.sqlite";
     SqliteConnection::establish(&database_url)
@@ -32,14 +46,6 @@ pub fn list_column_names(conn: &mut SqliteConnection, table: &str) -> Vec<TableI
     return columns;
 }
 
-#[derive(Debug, QueryableByName)]
-pub struct AvgAndSum {
-    #[diesel(sql_type = Float)]
-    pub avg: f32,
-    #[diesel(sql_type = BigInt)]
-    pub sum: i64,
-}
-
 pub fn column_sum_and_avg_by_date(
     conn: &mut SqliteConnection,
     colname: &str,
@@ -48,6 +54,14 @@ pub fn column_sum_and_avg_by_date(
     sql_query(format!(
         "SELECT avg({}) as avg, sum({}) as sum FROM {} GROUP BY date",
         colname, colname, table
+    ))
+    .get_results(conn)
+    .unwrap()
+}
+
+pub fn date_column(conn: &mut SqliteConnection) -> Vec<DateColumn> {
+    sql_query(format!(
+        "SELECT date as date FROM block_stats GROUP BY date"
     ))
     .get_results(conn)
     .unwrap()
