@@ -21,20 +21,23 @@ const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 5] = ["height", "date", "version",
 
 #[tokio::main]
 async fn main() {
-    collect_statistics().await;
-    write_csv_files();
+    if let Err(e) = collect_statistics().await {
+        println!("Could not collect statistics: {}", e);
+    };
+
+    if let Err(e) = write_csv_files() {
+        println!("Could not write CSV files to disk: {}", e);
+    };
 }
 
-async fn collect_statistics() {
+async fn collect_statistics() -> Result<(), diesel::result::Error> {
     let connection = &mut db::establish_connection();
     let rest = RestClient::network_default(Network::Signet);
 
-    let db_height: i64 = db::get_db_block_height(connection)
-        .unwrap()
-        .unwrap_or_default(); // TODO: abc
+    let db_height: i64 = db::get_db_block_height(connection)?.unwrap_or_default();
     let chain_info = match rest.get_chain_info().await {
         Ok(chain_info) => chain_info,
-        Err(e) => panic!("rest error"), // TODO
+        Err(e) => panic!("rest error: {}", e), // TODO:
     };
     let rest_height = chain_info.blocks;
 
@@ -77,15 +80,17 @@ async fn collect_statistics() {
     while let Ok(stat) = stat_receiver.recv() {
         stat_buffer.push(stat);
         if stat_buffer.len() >= 100 {
-            db::insert_stats(connection, &stat_buffer);
+            db::insert_stats(connection, &stat_buffer)?;
             stat_buffer.clear();
         }
     }
-    db::insert_stats(connection, &stat_buffer);
+    db::insert_stats(connection, &stat_buffer)?;
     stat_buffer.clear();
+
+    Ok(())
 }
 
-fn write_csv_files() {
+fn write_csv_files() -> Result<(), diesel::result::Error> {
     let connection = &mut db::establish_connection();
 
     println!("Generating date.csv file.");
@@ -98,7 +103,7 @@ fn write_csv_files() {
     date_file.write_all(date_content.as_bytes()).unwrap();
 
     for table in METRIC_TABLES.iter() {
-        let columns = db::list_column_names(connection, table);
+        let columns = db::list_column_names(connection, table)?;
 
         // filter out columns that aren't metrics and we don't want to create csv files for
         let columns_filtered: Vec<&TableInfo> = columns
@@ -125,4 +130,5 @@ fn write_csv_files() {
             sum_file.write_all(sum_content.as_bytes()).unwrap();
         }
     }
+    Ok(())
 }
