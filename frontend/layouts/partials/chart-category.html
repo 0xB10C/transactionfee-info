@@ -1,0 +1,3 @@
+{{ with .Params.categories }}
+Category: <a href="{{ "/categories/" | relLangURL }}{{ . | urlize }}" class="umami--click--href-category-{{. | urlize}}">{{ . }}</a>
+{{ end }}

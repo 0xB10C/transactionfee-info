@@ -1,0 +1,102 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>{{.Title}}</title>
+
+  {{ template "_internal/opengraph.html" . }} {{ template "_internal/twitter_cards.html" . }}
+
+  <link rel="apple-touch-icon" sizes="57x57" href="/img/browser-icons/apple-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/img/browser-icons/apple-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/img/browser-icons/apple-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/browser-icons/apple-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/img/browser-icons/apple-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/img/browser-icons/apple-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/img/browser-icons/apple-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/img/browser-icons/apple-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/browser-icons/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/img/browser-icons/android-icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/browser-icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/img/browser-icons/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/browser-icons/favicon-16x16.png">
+  <link rel="manifest" href="/img/browser-icons/manifest.json">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="/img/browser-icons/ms-icon-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+
+  <link rel="stylesheet" href="/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet" href="/css/index.css">
+  <script async defer
+          data-website-id="2ba196c5-ff48-4948-97da-512ddc2af753"
+          src="https://umami.b10c.me/b10c.js">
+  </script>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-sm navbar-light bg-light">
+    <div class="container">
+      <div class="navbar-nav">
+        <a class="navbar-brand umami--click--nav-logo" href="/">
+          <h1 class="mb-0">
+            <span style="font-weight:300;">transaction<span
+                style="color: #F84959; font-weight:700;">fee</span>.info</span>
+          </h1>
+          <span class="small text-muted">Bitcoin Protocol Layer Statistics</span>
+        </a>
+      </div>
+      <span class="navbar-text d-none d-md-block">
+        <a href="https://www.bitrefill.com/?utm_source=transactionfee_info" class="umami--click--nav-bitrefill-ad">
+          <img height=48 src="/img/bitrefill-logo.svg" alt="Bitrefill - Buy gift cards with Bitcoin">
+          <br>
+          <span class="text-muted">Buy gift cards with Bitcoin</span>
+        </a>
+      </span>
+    </div>
+  </nav>
+
+  <main class="container">
+    {{ block "main" .}} This is the _default/baseof main {{end}}
+  </main>
+  <hr>
+  <footer class="container">
+    {{ block "footer" .}}
+    <div class="row text-center">
+
+      <div class="col-sm mb-3">
+        <div class="d-flex flex-row text-left justify-content-center">
+          <div style="padding: 4px;">
+            <a href="https://twitter.com/0xb10c" class="umami--click--footer-0xb10c-logo">
+              <img width=48 height=48 src="/img/0xb10c.png" alt="0xB10C logo">
+            </a>
+          </div>
+
+          <div style="padding: 4px;">
+            <span>
+              <a style="color: #b10c00" href="https://twitter.com/0xb10c" class="umami--click--footer-0xb10c-name">0xB10C</a> -
+              <a style="color: #b10c00" href="https://b10c.me" class="umami--click--footer-0xb10c-website">b10c.me</a> <br>
+            </span>
+            <span class="text-muted">bitcoin freelancer</span><br>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm mb-3">
+        <a href="https://www.bitrefill.com/?utm_source=transactionfee_info" class="umami--click--footer-bitrefill-ad">
+          <img height=48 src="/img/bitrefill-logo.svg" alt="Bitrefill - Buy gift cards with Bitcoin">
+          <br>
+          <span class="text-muted">Buy gift cards with Bitcoin</span>
+        </a>
+      </div>
+
+    </div>
+    {{end}}
+    <span class="small" style="color: transparent;">Build date: {{now}}</span>
+  </footer>
+</body>
+
+{{ block "js" .}} {{ end}}
+
+</html>

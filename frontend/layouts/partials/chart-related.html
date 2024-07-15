@@ -1,0 +1,11 @@
+{{ $related := .Site.RegularPages.RelatedIndices . "tags" "categories" | first 4 }}
+{{ with $related }}
+<h4>Related Charts</h4>
+<section class="row">
+  {{range . }}
+  <section class="col-lg-3">
+    {{ partial "chart-card.html" .}}
+  </section>
+  {{end}}
+</section>
+{{end}}

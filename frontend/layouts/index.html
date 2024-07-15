@@ -1,0 +1,25 @@
+{{ define "main"}}
+<article class="px-3 my-3">
+
+    <header class="my-4">
+        <h1 class="display-4 my-3">Bitcoin Protocol Layer Statistics</h1>
+        <p>{{.Content }}</p>
+    </header>
+
+    <section class="container">
+        {{range ($.Site.GetPage "taxonomyTerm" "categories").Pages.ByParam "position" }}
+        {{ if and (ne .Title "dev-only") (ne .Title "Hidden") }}
+        <section class="row my-3">
+            <header class="col-12">
+                {{ partial "h2.html" .Title }}
+            </header>
+            {{range (.Data.Pages.ByParam "position") }}
+            <section class="col-lg-4 mb-4">
+                {{ partial "chart-card.html" .}}
+            </section>
+            {{end}}
+        </section>
+        {{end}} {{end}}
+    </section>
+</article>
+{{end}}

@@ -1,0 +1,6 @@
+{{ $anchorized := anchorize . }}
+
+<h2 id="{{ $anchorized }}">
+  <a href="#{{ $anchorized }}" style="color: #242424; text-decoration: none;"><span
+      style="color: silver;">#</span>&thinsp;{{ . }}</a>
+</h2>

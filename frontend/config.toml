@@ -1,0 +1,27 @@
+baseURL = "https://transactionfee.info/"
+languageCode = "en-us"
+title = "transactionfee.info"
+relativeURLs = true
+disableHugoGeneratorInject = false
+enableRobotsTXT = true
+
+[params]
+description = "Provides protocol-level statistics about Bitcoin: Blocks, Transactions, SegWit and more."
+images = ["/img/twitter-og.png"]
+
+[taxonomies]
+category = "categories"
+tag = "tags"
+
+[related]
+threshold = 50
+includeNewer = true
+toLower = false
+
+[[related.indices]]
+name = "tags"
+weight = 100
+
+[[related.indices]]
+name  = "categories"
+weight = 50

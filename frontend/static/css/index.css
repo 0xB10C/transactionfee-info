@@ -1,0 +1,7 @@
+.chart-card {
+    transition: all 0.15s cubic-bezier(1, 0, 0, 1);
+}
+
+.chart-card:hover {
+    transform: scale(1.02);
+}

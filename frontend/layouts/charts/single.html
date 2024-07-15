@@ -1,0 +1,77 @@
+{{ define "main"}}
+<article class="mt-3">
+  <header>
+    <h2>{{ .Title }}</h2>
+    <span class="lead">{{ .Summary | plainify  }}</span>
+  </header>
+  <section id="chart-wrapper" class="mt-3" style="height: 600px;">
+    <svg class="w-100 h-100" id="chart"></svg>
+  </section>
+  <section id="tooltip-wrapper">
+    <div id="tooltip" style="z-index: 20"></div>
+  </section>
+  <section>
+    <div class="container align-middle py-2">
+      <div class="row text-center small align-middle">
+        <div class="col-md py-2">
+          <span class="align-middle" id="description-timeframe-start">0</span> - <span
+            id="description-timeframe-end">moon</span>
+        </div>
+        <div class="col-md py-2">
+          <label><input type="checkbox" id="step-plot-input" autocomplete="off"> step plot</label>
+        </div>
+        <div id="annotations-box" class="col-md py-2">
+          <label><input type="checkbox" id="annotations-input" autocomplete="off"> annotations</label>
+        </div>
+        <div class="col-md py-2">
+          <span>moving average</span>
+          <input type="number" min="1" step="1" value="1" id="rolling-average-input" autocomplete="off"
+            style="width: 7ch;">
+          <span id="rolling-average-unit"></span>
+        </div>
+        <div class="col-md py-2">
+          <button type="button" id="permalink-input" class="btn btn-sm btn-outline-secondary">show permalink</button>
+        </div>
+      </div>
+      <div class="row text-center">
+        <div class="col-sm rounded-left">
+          <span id="description-legend"></span>
+        </div>
+      </div>
+    </div>
+    <br>
+  </section>
+  <section class="text-justify">
+    {{ $body := replace .Content .Summary "" }} {{ $body | safeHTML }}
+  </section>
+  <section>
+    <small class="small text-muted">
+      <span>{{ partial "chart-category.html" .}}</span>
+      <span> | </span>
+      <span>{{ partial "chart-tags.html" .}}</span>
+      {{ if .Draft }}
+      | <span class="card-text" style="color: red;">#draft</span>
+      {{ end }}
+      {{ if .Site.BuildDrafts }}
+      <a onclick="generatePNG('{{ .Page.File.TranslationBaseName }}.png')">thumbnail</a>
+      <a id="thumbnail-download" href=""></a>
+      {{ end }}
+    </small>
+  </section>
+  <hr>
+  <section>
+    {{ partial "chart-related.html" .}}
+  </section>
+</article>
+
+<!-- This SVG wont render on the site as it only defines things -->
+<svg height=0>
+  <defs>
+    <!-- place svg filters here -->
+  </defs>
+</svg> {{end}} {{- define "js" -}}
+<script src="/js/d3.v5.js"></script>
+<script src="/js/chart.js"></script>
+<script src="/js/charts/{{ .Params.chartJS }}"></script>
+
+{{ end }}
