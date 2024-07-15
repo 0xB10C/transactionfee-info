@@ -100,6 +100,7 @@ fn write_csv_files() -> Result<(), diesel::result::Error> {
         .iter()
         .map(|row| format!("{}\n", row.date))
         .collect();
+    date_file.write_all("date\n".as_bytes()).unwrap();
     date_file.write_all(date_content.as_bytes()).unwrap();
 
     for table in METRIC_TABLES.iter() {
@@ -120,6 +121,7 @@ fn write_csv_files() -> Result<(), diesel::result::Error> {
                 .iter()
                 .map(|aas| format!("{:.4}\n", aas.avg))
                 .collect();
+            avg_file.write_all(format!("{}_avg\n", column).as_bytes()).unwrap();
             avg_file.write_all(avg_content.as_bytes()).unwrap();
 
             let mut sum_file = std::fs::File::create(format!("csv/{}_sum.csv", column)).unwrap();
@@ -127,6 +129,7 @@ fn write_csv_files() -> Result<(), diesel::result::Error> {
                 .iter()
                 .map(|aas| format!("{}\n", aas.sum))
                 .collect();
+            sum_file.write_all(format!("{}_sum\n", column).as_bytes()).unwrap();
             sum_file.write_all(sum_content.as_bytes()).unwrap();
         }
     }
