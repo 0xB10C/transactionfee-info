@@ -749,7 +749,7 @@ function twoLineChart() {
 
     // update the current date variables
     currentStartDate = xScale.domain()[0]
-    currentEndDate = xScale.domain()[1] 
+    currentEndDate = xScale.domain()[1]
 
     focus.select("#lineY1").attr("d", lineY1);
     focus.select("#lineY2").attr("d", lineY2);
