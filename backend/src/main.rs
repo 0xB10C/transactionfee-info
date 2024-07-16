@@ -32,6 +32,9 @@ async fn main() {
 
 async fn collect_statistics() -> Result<(), diesel::result::Error> {
     let connection = &mut db::establish_connection();
+    if let Err(e) = db::run_pending_migrations(connection) {
+        panic!("could not run migration {}", e); // TODO
+    }
     let rest = RestClient::network_default(Network::Signet);
 
     let db_height: i64 = db::get_db_block_height(connection)?.unwrap_or_default();

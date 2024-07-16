@@ -1,9 +1,13 @@
 use crate::schema;
 use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, Stats, TxStats};
+use std::error::Error;
 use diesel::prelude::*;
 use diesel::sql_query;
 use diesel::sql_types::{BigInt, Float, Text};
 use diesel::sqlite::SqliteConnection;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations/");
 
 #[derive(Debug, QueryableByName)]
 pub struct TableInfo {
@@ -29,6 +33,13 @@ pub fn establish_connection() -> SqliteConnection {
     let database_url = "db.sqlite";
     SqliteConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+
+pub fn run_pending_migrations(
+    conn: &mut SqliteConnection,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    conn.run_pending_migrations(MIGRATIONS)?;
+    Ok(())
 }
 
 pub fn get_db_block_height(
