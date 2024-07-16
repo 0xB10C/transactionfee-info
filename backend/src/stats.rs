@@ -265,7 +265,7 @@ impl TxStats {
                 s.tx_spending_newly_created_utxos += 1;
             }
 
-            if tx.lock_time.is_block_height() {
+            if tx.lock_time.is_block_height() && tx.lock_time.to_consensus_u32() > 0 {
                 s.tx_timelock_height += 1;
             } else if tx.lock_time.is_block_time() {
                 s.tx_timelock_timestamp += 1;
