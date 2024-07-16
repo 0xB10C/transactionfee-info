@@ -2,18 +2,18 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/TxsSpendingNewlyCreatedUTXOs_sum.csv"),
-  d3.csv("/csv/Transactions_sum.csv"),
+  d3.csv("/csv/tx_spending_newly_created_utxos_sum.csv"),
+  d3.csv("/csv/transactions_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = parseFloat(data[1][i].TxsSpendingNewlyCreatedUTXOs_sum) / parseFloat(data[2][i].Transactions_sum)
+    const y = parseFloat(data[1][i].tx_spending_newly_created_utxos_sum) / parseFloat(data[2][i].transactions_sum)
     combinedData.push({date, y})
   }
-  
+
   return combinedData
 }
 

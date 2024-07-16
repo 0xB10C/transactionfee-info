@@ -2,20 +2,20 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/TxsNotSpendingSegWit_sum.csv"),
-  d3.csv("/csv/TxsOnlySpendingSegWit_sum.csv"),
-  d3.csv("/csv/TxsSpendingSegWitAndLegacy_sum.csv"),
-  d3.csv("/csv/Transactions_sum.csv"),
+  d3.csv("/csv/tx_spending_only_legacy_sum.csv"),
+  d3.csv("/csv/tx_spending_only_segwit_sum.csv"),
+  d3.csv("/csv/tx_spending_segwit_and_legacy_sum.csv"),
+  d3.csv("/csv/transactions_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const legacyOnly = parseFloat(data[1][i].TxsNotSpendingSegWit_sum)
-    const segwitOnly = parseFloat(data[2][i].TxsOnlySpendingSegWit_sum)
-    const mixed = parseFloat(data[3][i].TxsSpendingSegWitAndLegacy_sum)
-    const total = parseFloat(data[4][i].Transactions_sum)
+    const legacyOnly = parseFloat(data[1][i].tx_spending_only_legacy_sum)
+    const segwitOnly = parseFloat(data[2][i].tx_spending_only_segwit_sum)
+    const mixed = parseFloat(data[3][i].tx_spending_segwit_and_legacy_sum)
+    const total = parseFloat(data[4][i].transactions_sum)
 
     const legacyOnly_percentage = legacyOnly / total || 0
     const segwitOnly_percentage = segwitOnly / total || 0

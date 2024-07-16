@@ -20,7 +20,7 @@ function preprocess(data) {
     const len72 = parseFloat(data[4][i].sigs_ecdsa_length_72byte_sum)
     const len73 = parseFloat(data[5][i].sigs_ecdsa_length_73byte_sum)
     const len74 = parseFloat(data[6][i].sigs_ecdsa_length_74byte_sum)
-  
+
     const total = lenLess70 + len70 + len71 + len72 + len73 + len74
 
     const lenLess70_percentage = lenLess70 / total || 0
@@ -34,7 +34,7 @@ function preprocess(data) {
 
     combinedData.push({date, lenLess70_percentage, len70_percentage, len71_percentage, len72_percentage, len73_percentage, len74_percentage, filler})
   }
-  
+
   return combinedData
 }
 

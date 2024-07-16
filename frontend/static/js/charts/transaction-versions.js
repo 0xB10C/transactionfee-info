@@ -2,18 +2,18 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/TxsVersion1_sum.csv"),
-  d3.csv("/csv/TxsVersion2_sum.csv"),
-  d3.csv("/csv/Transactions_sum.csv"),
+  d3.csv("/csv/tx_version_1_sum.csv"),
+  d3.csv("/csv/tx_version_2_sum.csv"),
+  d3.csv("/csv/transactions_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const txs_sum = parseFloat(data[3][i].Transactions_sum)
-    const txs_v1_percentage = parseFloat(data[1][i].TxsVersion1_sum) / txs_sum
-    const txs_v2_percentage = parseFloat(data[2][i].TxsVersion2_sum) / txs_sum
+    const txs_sum = parseFloat(data[3][i].transactions_sum)
+    const txs_v1_percentage = parseFloat(data[1][i].tx_version_1_sum) / txs_sum
+    const txs_v2_percentage = parseFloat(data[2][i].tx_version_2_sum) / txs_sum
     combinedData.push({date, txs_v1_percentage, txs_v2_percentage})
   }
   

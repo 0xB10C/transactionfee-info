@@ -2,24 +2,24 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/InputsP2WSHV0_sum.csv"),
-  d3.csv("/csv/InputsP2WPKHV0_sum.csv"),
-  d3.csv("/csv/InputsNestedP2WPKH_sum.csv"),
-  d3.csv("/csv/InputsNestedP2WSH_sum.csv"),
-  d3.csv("/csv/InputsP2TRKeyPath_sum.csv"),
-  d3.csv("/csv/InputsP2TRScriptPath_sum.csv"),
+  d3.csv("/csv/inputs_p2wsh_sum.csv"),
+  d3.csv("/csv/inputs_p2wpkh_sum.csv"),
+  d3.csv("/csv/inputs_nested_p2wpkh_sum.csv"),
+  d3.csv("/csv/inputs_nested_p2wsh_sum.csv"),
+  d3.csv("/csv/inputs_p2tr_keypath_sum.csv"),
+  d3.csv("/csv/inputs_p2tr_scriptpath_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const nativeSH = parseFloat(data[1][i].InputsP2WSHV0_sum)
-    const nativePKH = parseFloat(data[2][i].InputsP2WPKHV0_sum)
-    const nestedPKH = parseFloat(data[3][i].InputsNestedP2WPKH_sum)
-    const nestedSH = parseFloat(data[4][i].InputsNestedP2WSH_sum)
-    const p2trKeypath = parseFloat(data[5][i].InputsP2TRKeyPath_sum)
-    const p2trScriptpath = parseFloat(data[6][i].InputsP2TRScriptPath_sum)
+    const nativeSH = parseFloat(data[1][i].inputs_p2wsh_sum)
+    const nativePKH = parseFloat(data[2][i].inputs_p2wpkh_sum)
+    const nestedPKH = parseFloat(data[3][i].inputs_nested_p2wpkh_sum)
+    const nestedSH = parseFloat(data[4][i].inputs_nested_p2wsh_sum)
+    const p2trKeypath = parseFloat(data[5][i].inputs_p2tr_keypath_sum)
+    const p2trScriptpath = parseFloat(data[6][i].inputs_p2tr_scriptpath_sum)
 
     const total = nativeSH + nativePKH + nestedPKH + nestedSH + p2trKeypath + p2trScriptpath
 
@@ -32,7 +32,7 @@ function preprocess(data) {
 
     combinedData.push({date, NestedP2WPKH_percentage, NestedP2WSH_percentage, P2WPKHv0_percentage, P2WSHv0_percentage, p2trKeypath_percentage, p2trScriptpath_percentage})
   }
-  
+
   return combinedData
 }
 

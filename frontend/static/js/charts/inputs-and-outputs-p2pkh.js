@@ -2,19 +2,19 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/InputsP2PKH_sum.csv"),
-  d3.csv("/csv/OutputsP2PKH_sum.csv"),
+  d3.csv("/csv/inputs_p2pkh_sum.csv"),
+  d3.csv("/csv/outputs_p2pkh_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y1 = parseFloat(data[1][i].InputsP2PKH_sum)
-    const y2 = parseFloat(data[2][i].OutputsP2PKH_sum)
+    const y1 = parseFloat(data[1][i].inputs_p2pkh_sum)
+    const y2 = parseFloat(data[2][i].outputs_p2pkh_sum)
     combinedData.push({date, y1, y2})
   }
-  
+
   return combinedData
 }
 

@@ -2,20 +2,20 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/PubKeysUncompressedInputs_sum.csv"),
-  d3.csv("/csv/PubKeysCompressedInputs_sum.csv"),
-  d3.csv("/csv/PubKeysUncompressedOutputs_sum.csv"),
-  d3.csv("/csv/PubKeysCompressedOutputs_sum.csv"),
+  d3.csv("/csv/pubkeys_uncompressed_inputs_sum.csv"),
+  d3.csv("/csv/pubkeys_compressed_inputs_sum.csv"),
+  d3.csv("/csv/pubkeys_uncompressed_outputs_sum.csv"),
+  d3.csv("/csv/pubkeys_compressed_outputs_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const uncompressed_in = parseFloat(data[1][i].PubKeysUncompressedInputs_sum)
-    const compressed_in = parseFloat(data[2][i].PubKeysCompressedInputs_sum)
-    const uncompressed_out = parseFloat(data[3][i].PubKeysUncompressedOutputs_sum)
-    const compressed_out = parseFloat(data[4][i].PubKeysCompressedOutputs_sum)
+    const uncompressed_in = parseFloat(data[1][i].pubkeys_uncompressed_inputs_sum)
+    const compressed_in = parseFloat(data[2][i].pubkeys_compressed_inputs_sum)
+    const uncompressed_out = parseFloat(data[3][i].pubkeys_uncompressed_outputs_sum)
+    const compressed_out = parseFloat(data[4][i].pubkeys_compressed_outputs_sum)
 
     const total = uncompressed_in + compressed_in + uncompressed_out + compressed_out
 
@@ -26,7 +26,7 @@ function preprocess(data) {
 
     combinedData.push({date, compressed_percentage_in, uncompressed_percentage_in, compressed_percentage_out, uncompressed_percentage_out})
   }
-  
+
   return combinedData
 }
 

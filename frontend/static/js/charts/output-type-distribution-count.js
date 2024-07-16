@@ -2,14 +2,14 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/OutputsP2PK_sum.csv"),
-  d3.csv("/csv/OutputsP2PKH_sum.csv"),
-  d3.csv("/csv/OutputsP2WPKHV0_sum.csv"),
-  d3.csv("/csv/OutputsP2MS_sum.csv"),
-  d3.csv("/csv/OutputsP2SH_sum.csv"),
-  d3.csv("/csv/OutputsP2WSHV0_sum.csv"),
-  d3.csv("/csv/OutputsP2TR_sum.csv"),
-  d3.csv("/csv/OutputsOPRETURN_sum.csv"),
+  d3.csv("/csv/outputs_p2pk_sum.csv"),
+  d3.csv("/csv/outputs_p2pkh_sum.csv"),
+  d3.csv("/csv/outputs_p2wpkh_sum.csv"),
+  d3.csv("/csv/outputs_p2ms_sum.csv"),
+  d3.csv("/csv/outputs_p2sh_sum.csv"),
+  d3.csv("/csv/outputs_p2wsh_sum.csv"),
+  d3.csv("/csv/outputs_p2tr_sum.csv"),
+  d3.csv("/csv/outputs_opreturn_sum.csv"),
 ]
 
 function preprocess(data) {
@@ -17,14 +17,14 @@ function preprocess(data) {
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
 
-    const outs_P2PK = parseFloat(data[1][i].OutputsP2PK_sum)
-    const outs_P2PKH = parseFloat(data[2][i].OutputsP2PKH_sum)
-    const outs_P2WPKH = parseFloat(data[3][i].OutputsP2WPKHV0_sum)
-    const outs_P2MS = parseFloat(data[4][i].OutputsP2MS_sum)
-    const outs_P2SH = parseFloat(data[5][i].OutputsP2SH_sum)
-    const outs_P2WSH = parseFloat(data[6][i].OutputsP2WSHV0_sum)
-    const outs_P2TR = parseFloat(data[7][i].OutputsP2TR_sum)
-    const outs_OPRETURN = parseFloat(data[8][i].OutputsOPRETURN_sum)
+    const outs_P2PK = parseFloat(data[1][i].outputs_p2pk_sum)
+    const outs_P2PKH = parseFloat(data[2][i].outputs_p2pkh_sum)
+    const outs_P2WPKH = parseFloat(data[3][i].outputs_p2wpkh_sum)
+    const outs_P2MS = parseFloat(data[4][i].outputs_p2ms_sum)
+    const outs_P2SH = parseFloat(data[5][i].outputs_p2sh_sum)
+    const outs_P2WSH = parseFloat(data[6][i].outputs_p2wsh_sum)
+    const outs_P2TR = parseFloat(data[7][i].outputs_p2tr_sum)
+    const outs_OPRETURN = parseFloat(data[8][i].outputs_opreturn_sum)
 
     const total = outs_P2PK + outs_P2PKH + outs_P2WPKH + outs_P2MS + outs_P2SH + outs_OPRETURN + outs_P2WSH + outs_P2TR
 

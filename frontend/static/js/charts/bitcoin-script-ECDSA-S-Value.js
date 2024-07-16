@@ -2,16 +2,16 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/SigECDSALowS_sum.csv"),
-  d3.csv("/csv/SigECDSAHighS_sum.csv"),
+  d3.csv("/csv/sigs_ecdsa_low_s_sum.csv"),
+  d3.csv("/csv/sigs_ecdsa_high_s_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const lowS = parseFloat(data[1][i].SigECDSALowS_sum)
-    const highS = parseFloat(data[2][i].SigECDSAHighS_sum)
+    const lowS = parseFloat(data[1][i].sigs_ecdsa_low_s_sum)
+    const highS = parseFloat(data[2][i].sigs_ecdsa_high_s_sum)
 
     const total = lowS + highS
 
@@ -22,7 +22,7 @@ function preprocess(data) {
 
     combinedData.push({date, lowS_percentage, highS_percentage, filler})
   }
-  
+
   return combinedData
 }
 
@@ -32,7 +32,7 @@ const labels = {"lowS_percentage": "low-S", "highS_percentage": "high-S"}
 const dataType = dataTypePercentage
 const unit = ""
 
-var keys = ["lowS_percentage", "highS_percentage"] 
+var keys = ["lowS_percentage", "highS_percentage"]
 var colors = {"lowS_percentage":  colorBLUE, "highS_percentage": colorYELLOW}
 
 const chartFunction = stackedAreaChart

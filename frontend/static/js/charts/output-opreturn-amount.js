@@ -2,7 +2,7 @@ const chartRollingAverage = 1
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/OutputsOPRETURNAmount_sum.csv"),
+  d3.csv("/csv/outputs_opreturn_amount_sum.csv"),
 ]
 
 function preprocess(data) {
@@ -10,7 +10,7 @@ function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    cumulativeValue += parseFloat(data[1][i].OutputsOPRETURNAmount_sum)
+    cumulativeValue += parseFloat(data[1][i].outputs_opreturn_amount_sum)
     const y = cumulativeValue
     combinedData.push({date, y})
   }

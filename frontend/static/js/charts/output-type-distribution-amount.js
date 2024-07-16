@@ -2,14 +2,14 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/OutputsP2PKAmount_sum.csv"),
-  d3.csv("/csv/OutputsP2PKHAmount_sum.csv"),
-  d3.csv("/csv/OutputsP2WPKHV0Amount_sum.csv"),
-  d3.csv("/csv/OutputsP2MSAmount_sum.csv"),
-  d3.csv("/csv/OutputsP2SHAmount_sum.csv"),
-  d3.csv("/csv/OutputsP2WSHV0Amount_sum.csv"),
-  d3.csv("/csv/OutputsP2TRAmount_sum.csv"),
-  d3.csv("/csv/OutputsOPRETURNAmount_sum.csv"),
+  d3.csv("/csv/outputs_p2pk_amount_sum.csv"),
+  d3.csv("/csv/outputs_p2pkh_amount_sum.csv"),
+  d3.csv("/csv/outputs_p2wpkh_amount_sum.csv"),
+  d3.csv("/csv/outputs_p2ms_amount_sum.csv"),
+  d3.csv("/csv/outputs_p2sh_amount_sum.csv"),
+  d3.csv("/csv/outputs_p2wsh_amount_sum.csv"),
+  d3.csv("/csv/outputs_p2tr_amount_sum.csv"),
+  d3.csv("/csv/outputs_opreturn_amount_sum.csv"),
 ]
 
 function preprocess(data) {
@@ -17,14 +17,14 @@ function preprocess(data) {
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
 
-    const outs_P2PK = parseFloat(data[1][i].OutputsP2PKAmount_sum)
-    const outs_P2PKH = parseFloat(data[2][i].OutputsP2PKHAmount_sum)
-    const outs_P2WPKH = parseFloat(data[3][i].OutputsP2WPKHV0Amount_sum)
-    const outs_P2MS = parseFloat(data[4][i].OutputsP2MSAmount_sum)
-    const outs_P2SH = parseFloat(data[5][i].OutputsP2SHAmount_sum)
-    const outs_P2WSH = parseFloat(data[6][i].OutputsP2WSHV0Amount_sum)
-    const outs_P2TR = parseFloat(data[7][i].OutputsP2TRAmount_sum)
-    const outs_OPRETURN = parseFloat(data[8][i].OutputsOPRETURNAmount_sum)
+    const outs_P2PK = parseFloat(data[1][i].outputs_p2pk_amount_sum)
+    const outs_P2PKH = parseFloat(data[2][i].outputs_p2pkh_amount_sum)
+    const outs_P2WPKH = parseFloat(data[3][i].outputs_p2wpkh_amount_sum)
+    const outs_P2MS = parseFloat(data[4][i].outputs_p2ms_amount_sum)
+    const outs_P2SH = parseFloat(data[5][i].outputs_p2sh_amount_sum)
+    const outs_P2WSH = parseFloat(data[6][i].outputs_p2wsh_amount_sum)
+    const outs_P2TR = parseFloat(data[7][i].outputs_p2tr_amount_sum)
+    const outs_OPRETURN = parseFloat(data[8][i].outputs_opreturn_amount_sum)
 
     const total = outs_P2PK + outs_P2PKH + outs_P2WPKH + outs_P2MS + outs_P2SH + outs_OPRETURN + outs_P2WSH + outs_P2TR
 
@@ -39,7 +39,7 @@ function preprocess(data) {
 
     combinedData.push({date, outs_P2PK_percentage, outs_P2PKH_percentage, outs_P2MS_percentage, outs_P2SH_percentage, outs_OPRETURN_percentage, outs_P2WPKH_percentage, outs_P2WSH_percentage, outs_P2TR_percentage})
   }
-  
+
   return combinedData
 }
 

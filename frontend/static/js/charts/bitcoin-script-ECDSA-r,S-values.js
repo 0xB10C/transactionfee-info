@@ -2,20 +2,20 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/SigECDSALowRS_sum.csv"),
-  d3.csv("/csv/SigECDSAHighRS_sum.csv"),
-  d3.csv("/csv/SigECDSALowRHighS_sum.csv"),
-  d3.csv("/csv/SigECDSAHighRLowS_sum.csv"),
+  d3.csv("/csv/sigs_ecdsa_low_rs_sum.csv"),
+  d3.csv("/csv/sigs_ecdsa_high_rs_sum.csv"),
+  d3.csv("/csv/sigs_ecdsa_low_r_high_s_sum.csv"),
+  d3.csv("/csv/sigs_ecdsa_high_r_low_s_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const LowRS = parseFloat(data[1][i].SigECDSALowRS_sum)
-    const HighRS = parseFloat(data[2][i].SigECDSAHighRS_sum)
-    const LowRHighS = parseFloat(data[3][i].SigECDSALowRHighS_sum)
-    const HighRLowS = parseFloat(data[4][i].SigECDSAHighRLowS_sum)
+    const LowRS = parseFloat(data[1][i].sigs_ecdsa_low_rs_sum)
+    const HighRS = parseFloat(data[2][i].sigs_ecdsa_high_rs_sum)
+    const LowRHighS = parseFloat(data[3][i].sigs_ecdsa_low_r_high_s_sum)
+    const HighRLowS = parseFloat(data[4][i].sigs_ecdsa_high_r_low_s_sum)
 
     const total = LowRS + HighRS + LowRHighS + HighRLowS
 
@@ -28,7 +28,7 @@ function preprocess(data) {
 
     combinedData.push({date, LowRS_percentage, HighRS_percentage, LowRHighS_percentage, HighRLowS_percentage, filler})
   }
-  
+
   return combinedData
 }
 

@@ -2,18 +2,18 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/InputsP2SH_sum.csv"),
-  d3.csv("/csv/InputsNestedP2WPKH_sum.csv"),
-  d3.csv("/csv/InputsNestedP2WSH_sum.csv"),
+  d3.csv("/csv/inputs_p2sh_sum.csv"),
+  d3.csv("/csv/inputs_nested_p2wpkh_sum.csv"),
+  d3.csv("/csv/inputs_nested_p2wsh_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const P2SH = parseFloat(data[1][i].InputsP2SH_sum)
-    const NestedP2WPKH = parseFloat(data[2][i].InputsNestedP2WPKH_sum)
-    const NestedP2WSH = parseFloat(data[3][i].InputsNestedP2WSH_sum)
+    const P2SH = parseFloat(data[1][i].inputs_p2sh_sum)
+    const NestedP2WPKH = parseFloat(data[2][i].inputs_nested_p2wpkh_sum)
+    const NestedP2WSH = parseFloat(data[3][i].inputs_nested_p2wsh_sum)
 
     const total = P2SH + NestedP2WPKH + NestedP2WSH
 

@@ -2,6 +2,9 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
+  // TODO: these are the file names from the Go-version of transactionfee.info
+  // and would need to be updated to the Rust version as soon as fee data is
+  // available.
   d3.csv("/csv/FeeratePackageMin_avg.csv"),
   d3.csv("/csv/FeeratePackage5thPercentile_avg.csv"),
   d3.csv("/csv/FeeratePackage10thPercentile_avg.csv"),

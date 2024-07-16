@@ -2,16 +2,16 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/InputsP2PK_sum.csv"),
-  d3.csv("/csv/InputsP2PKH_sum.csv"),
-  d3.csv("/csv/InputsNestedP2WPKH_sum.csv"),
-  d3.csv("/csv/InputsP2WPKHV0_sum.csv"),
-  d3.csv("/csv/InputsP2MS_sum.csv"),
-  d3.csv("/csv/InputsP2SH_sum.csv"),
-  d3.csv("/csv/InputsNestedP2WSH_sum.csv"),
-  d3.csv("/csv/InputsP2WSHV0_sum.csv"),
-  d3.csv("/csv/InputsP2TRKeyPath_sum.csv"),
-  d3.csv("/csv/InputsP2TRScriptPath_sum.csv"),
+  d3.csv("/csv/inputs_p2pk_sum.csv"),
+  d3.csv("/csv/inputs_p2pkh_sum.csv"),
+  d3.csv("/csv/inputs_nested_p2wpkh_sum.csv"),
+  d3.csv("/csv/inputs_p2wpkh_sum.csv"),
+  d3.csv("/csv/inputs_p2ms_sum.csv"),
+  d3.csv("/csv/inputs_p2sh_sum.csv"),
+  d3.csv("/csv/inputs_nested_p2wsh_sum.csv"),
+  d3.csv("/csv/inputs_p2wsh_sum.csv"),
+  d3.csv("/csv/inputs_p2tr_keypath_sum.csv"),
+  d3.csv("/csv/inputs_p2tr_scriptpath_sum.csv"),
 ]
 
 function preprocess(data) {
@@ -19,16 +19,16 @@ function preprocess(data) {
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
 
-    const ins_P2PK = parseFloat(data[1][i].InputsP2PK_sum)
-    const ins_P2PKH = parseFloat(data[2][i].InputsP2PKH_sum)
-    const ins_Nested_P2WPKH = parseFloat(data[3][i].InputsNestedP2WPKH_sum)
-    const ins_P2WPKH = parseFloat(data[4][i].InputsP2WPKHV0_sum)
-    const ins_P2MS = parseFloat(data[5][i].InputsP2MS_sum)
-    const ins_P2SH = parseFloat(data[6][i].InputsP2SH_sum)
-    const ins_Nested_P2WSH = parseFloat(data[7][i].InputsNestedP2WSH_sum)
-    const ins_P2WSH = parseFloat(data[8][i].InputsP2WSHV0_sum)
-    const ins_p2trKeypath = parseFloat(data[9][i].InputsP2TRKeyPath_sum)
-    const ins_p2trScriptpath = parseFloat(data[10][i].InputsP2TRScriptPath_sum)
+    const ins_P2PK = parseFloat(data[1][i].inputs_p2pk_sum)
+    const ins_P2PKH = parseFloat(data[2][i].inputs_p2pkh_sum)
+    const ins_Nested_P2WPKH = parseFloat(data[3][i].inputs_nested_p2wpkh_sum)
+    const ins_P2WPKH = parseFloat(data[4][i].inputs_p2wpkh_sum)
+    const ins_P2MS = parseFloat(data[5][i].inputs_p2ms_sum)
+    const ins_P2SH = parseFloat(data[6][i].inputs_p2sh_sum)
+    const ins_Nested_P2WSH = parseFloat(data[7][i].inputs_nested_p2wsh_sum)
+    const ins_P2WSH = parseFloat(data[8][i].inputs_p2wsh_sum)
+    const ins_p2trKeypath = parseFloat(data[9][i].inputs_p2tr_keypath_sum)
+    const ins_p2trScriptpath = parseFloat(data[10][i].inputs_p2tr_scriptpath_sum)
 
     const total = ins_P2PK + ins_P2PKH + ins_Nested_P2WPKH + ins_P2WPKH + ins_P2MS + ins_P2SH + ins_Nested_P2WSH + ins_P2WSH + ins_p2trKeypath + ins_p2trScriptpath
 

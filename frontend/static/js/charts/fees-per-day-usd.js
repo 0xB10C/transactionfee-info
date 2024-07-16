@@ -2,7 +2,11 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
+  // TODO: these are the file names from the Go-version of transactionfee.info
+  // and would need to be updated to the Rust version as soon as fee data is
+  // available.
   d3.csv("/csv/FeeSum_sum.csv"),
+  // No price data available.
   d3.csv("/csv/price.csv"),
 ]
 

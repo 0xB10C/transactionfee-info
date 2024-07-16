@@ -2,14 +2,14 @@ const chartRollingAverage = 1
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/SigHashNONEANYONECANPAY_sum.csv"),
+  d3.csv("/csv/sigs_sighash_none_acp_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = parseFloat(data[1][i].SigHashNONEANYONECANPAY_sum)
+    const y = parseFloat(data[1][i].sigs_sighash_none_acp_sum)
     combinedData.push({date, y})
   }
   

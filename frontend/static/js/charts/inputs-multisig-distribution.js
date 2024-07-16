@@ -2,20 +2,20 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/InputsSpendingP2MSMultiSig_sum.csv"),
-  d3.csv("/csv/InputsSpendingP2SHMultiSig_sum.csv"),
-  d3.csv("/csv/InputsSpendingNestedP2WSHMultisig_sum.csv"),
-  d3.csv("/csv/InputsSpendingP2WSHMultisig_sum.csv"),
+  d3.csv("/csv/inputs_spending_p2ms_multisig_sum.csv"),
+  d3.csv("/csv/inputs_spending_p2sh_multisig_sum.csv"),
+  d3.csv("/csv/inputs_spending_nested_p2wsh_multisig_sum.csv"),
+  d3.csv("/csv/inputs_spending_p2wsh_multisig_sum.csv"),
 ]
 
 function preprocess(data) {
   combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const ms_P2MS = parseFloat(data[1][i].InputsSpendingP2MSMultiSig_sum)
-    const ms_P2SH = parseFloat(data[2][i].InputsSpendingP2SHMultiSig_sum)
-    const ms_Nested_P2WSH = parseFloat(data[3][i].InputsSpendingNestedP2WSHMultisig_sum)
-    const ms_P2WSH = parseFloat(data[4][i].InputsSpendingP2WSHMultisig_sum)
+    const ms_P2MS = parseFloat(data[1][i].inputs_spending_p2ms_multisig_sum)
+    const ms_P2SH = parseFloat(data[2][i].inputs_spending_p2sh_multisig_sum)
+    const ms_Nested_P2WSH = parseFloat(data[3][i].inputs_spending_nested_p2wsh_multisig_sum)
+    const ms_P2WSH = parseFloat(data[4][i].inputs_spending_p2wsh_multisig_sum)
 
     const total = ms_P2MS + ms_P2SH + ms_Nested_P2WSH + ms_P2WSH
 
@@ -28,7 +28,7 @@ function preprocess(data) {
 
     combinedData.push({date, ms_P2MS_percentage, ms_P2SH_percentage, ms_Nested_P2WSH_percentage, ms_P2WSH_percentage, filler})
   }
-  
+
   return combinedData
 }
 
