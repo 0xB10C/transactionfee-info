@@ -2,9 +2,9 @@ use bitcoincore_rest::bitcoin::{Block, Transaction, Txid};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::prelude::*;
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
-
 use std::collections::HashSet;
 
+#[derive(Debug)]
 pub struct Stats {
     pub block: BlockStats,
     pub tx: TxStats,
@@ -40,7 +40,7 @@ impl Stats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Debug)]
 #[diesel(table_name = crate::schema::block_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -144,7 +144,7 @@ impl BlockStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
 #[diesel(table_name = crate::schema::tx_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -284,7 +284,7 @@ impl TxStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
 #[diesel(table_name = crate::schema::script_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -434,7 +434,7 @@ impl ScriptStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
 #[diesel(table_name = crate::schema::input_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -538,7 +538,7 @@ impl InputStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
 #[diesel(table_name = crate::schema::output_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -625,7 +625,7 @@ impl OutputStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Debug)]
 #[diesel(table_name = crate::schema::feerate_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
