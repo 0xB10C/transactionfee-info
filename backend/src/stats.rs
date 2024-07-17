@@ -21,9 +21,8 @@ impl Stats {
         let datetime: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_timestamp, Utc);
         let date = datetime.format("%Y-%m-%d").to_string();
 
-        // rawtx-rs transaction infos excluding the coinbase transaction
         let mut tx_infos: Vec<TxInfo> = Vec::with_capacity(block.txdata.len());
-        for txinfo_result in block.txdata.iter().skip(1).map(TxInfo::new) {
+        for txinfo_result in block.txdata.iter().map(TxInfo::new) {
             match txinfo_result {
                 Ok(tx_info) => tx_infos.push(tx_info),
                 Err(e) => println!("Error parsing transaction in block {}: {:?}", height, e),
