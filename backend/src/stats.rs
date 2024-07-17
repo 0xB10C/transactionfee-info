@@ -683,3 +683,32 @@ pub struct FeerateStats {
     feerate_package_max: f32,
     feerate_package_avg: f32,
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use std::io::BufReader;
+    use std::io::Read;
+    use bitcoincore_rest::bitcoin;
+    use crate::Stats;
+
+    #[test]
+    fn test_block_739990() {
+        // converted from 739990.hex with xxd -r -p 739990.hex > 739990.bin
+        let mut buffer = BufReader::new(File::open("./testdata/739990.bin").unwrap());
+        const CAPACITY_FOR_739990: usize = 536844;
+        let mut block_bytes: Vec<u8> = Vec::with_capacity(CAPACITY_FOR_739990);
+        let bytes_read = buffer.read_to_end(&mut block_bytes);
+        // to keep the capacity up-to-date and copy & paste proof
+        assert_eq!(bytes_read.unwrap(), CAPACITY_FOR_739990);
+        let block: bitcoin::Block = bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
+        let stats = Stats::from_block_and_height(block, 739990);
+
+        assert_eq!(stats.block.transactions, 645);
+
+        // an earlier version skipped the coinbase transaction
+        assert_eq!(stats.input.inputs_witness_coinbase, 1);
+
+        // TODO: extend coverage
+    }
+}
