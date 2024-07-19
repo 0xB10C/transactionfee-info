@@ -1,8 +1,8 @@
-pub mod db;
-pub mod schema;
-pub mod stats;
+mod db;
+mod rest;
+mod schema;
+mod stats;
 
-use bitcoincore_rest::{bitcoin::Network, RestApi, RestClient};
 use stats::Stats;
 use std::io::Write;
 use std::sync::mpsc as std_mpsc;
@@ -23,10 +23,12 @@ const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 5] = ["height", "date", "version",
 async fn main() {
     if let Err(e) = collect_statistics().await {
         println!("Could not collect statistics: {}", e);
+        return;
     };
 
     if let Err(e) = write_csv_files() {
         println!("Could not write CSV files to disk: {}", e);
+        return;
     };
 }
 
@@ -35,27 +37,26 @@ async fn collect_statistics() -> Result<(), diesel::result::Error> {
     if let Err(e) = db::run_pending_migrations(connection) {
         panic!("could not run migration {}", e); // TODO
     }
-    let rest = RestClient::network_default(Network::Signet);
+    let client = rest::RestClient::new("localhost", 38332);
 
     let db_height: i64 = db::get_db_block_height(connection)?.unwrap_or_default();
-    let chain_info = match rest.get_chain_info().await {
+    let chain_info = match client.chain_info() {
         Ok(chain_info) => chain_info,
         Err(e) => panic!("rest error: {}", e), // TODO:
     };
-    let rest_height = chain_info.blocks;
-
-    if chain_info.initial_block_download {
-        panic!("The Bitcoin Core node is in initial block download (progress: {:.2}%). Please try again once the IBD is done.", chain_info.verification_progress*100.0);
+    if chain_info.initialblockdownload {
+        panic!("The Bitcoin Core node is in initial block download (progress: {:.2}%). Please try again once the IBD is done.", chain_info.verificationprogress*100.0);
         // TODO
     }
+    let rest_height = chain_info.blocks;
 
-    let (block_sender, mut block_receiver) = mpsc::channel(12);
-    let (stat_sender, stat_receiver) = std_mpsc::sync_channel(100);
+    let (block_sender, mut block_receiver) = mpsc::channel(1);
+    let (stat_sender, stat_receiver) = std_mpsc::sync_channel(1);
 
     tokio::spawn(async move {
         for height in std::cmp::max(db_height - 10, 0)..std::cmp::max((rest_height - 6) as i64, 0) {
             println!("getting block height {}", height);
-            let block = rest.get_block_at_height(height as u64).await;
+            let block = client.block_at_height(height as u64).unwrap(); // TODO:
             if let Err(_) = block_sender.send((height as i64, block)).await {
                 println!("receiver dropped");
                 return;
@@ -64,8 +65,7 @@ async fn collect_statistics() -> Result<(), diesel::result::Error> {
     });
 
     tokio::spawn(async move {
-        while let Some((height, block_result)) = block_receiver.recv().await {
-            let block = block_result.expect("block"); // TODO:
+        while let Some((height, block)) = block_receiver.recv().await {
             println!("calculating stats..");
 
             let stat_sender_clone = stat_sender.clone();
@@ -124,7 +124,9 @@ fn write_csv_files() -> Result<(), diesel::result::Error> {
                 .iter()
                 .map(|aas| format!("{:.4}\n", aas.avg))
                 .collect();
-            avg_file.write_all(format!("{}_avg\n", column).as_bytes()).unwrap();
+            avg_file
+                .write_all(format!("{}_avg\n", column).as_bytes())
+                .unwrap();
             avg_file.write_all(avg_content.as_bytes()).unwrap();
 
             let mut sum_file = std::fs::File::create(format!("csv/{}_sum.csv", column)).unwrap();
@@ -132,7 +134,9 @@ fn write_csv_files() -> Result<(), diesel::result::Error> {
                 .iter()
                 .map(|aas| format!("{}\n", aas.sum))
                 .collect();
-            sum_file.write_all(format!("{}_sum\n", column).as_bytes()).unwrap();
+            sum_file
+                .write_all(format!("{}_sum\n", column).as_bytes())
+                .unwrap();
             sum_file.write_all(sum_content.as_bytes()).unwrap();
         }
     }

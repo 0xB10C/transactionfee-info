@@ -9,8 +9,8 @@ edition = "2021"
 serde = "1.0.188"
 diesel = { version = "= 2.1", features = ["sqlite", "64-column-tables"] }
 diesel_migrations = "2.1"
-bitcoincore-rest = "3.0.1"
-tokio = {version = "1.32.0", features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { version = "= 1.32.0", features = ["rt", "rt-multi-thread", "macros", "sync"] }
 chrono = "0.4.26"
-rawtx-rs = {git = "https://github.com/0xB10C/rawtx-rs", branch = "2023-08-pubkeyinfo" } #"0.1.4"
+rawtx-rs = "0.1.11"
 rayon = "1.7.0"
+minreq = { version = "2.12.0", features = ["json-using-serde"] }

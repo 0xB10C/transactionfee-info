@@ -1,6 +1,6 @@
-use bitcoincore_rest::bitcoin::{Block, Transaction, Txid};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::prelude::*;
+use rawtx_rs::bitcoin::{Block, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
 use std::collections::HashSet;
 
@@ -20,7 +20,6 @@ impl Stats {
             NaiveDateTime::from_timestamp_millis(block.header.time as i64 * 1000).unwrap();
         let datetime: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_timestamp, Utc);
         let date = datetime.format("%Y-%m-%d").to_string();
-
         let mut tx_infos: Vec<TxInfo> = Vec::with_capacity(block.txdata.len());
         for txinfo_result in block.txdata.iter().map(TxInfo::new) {
             match txinfo_result {
@@ -98,8 +97,12 @@ impl BlockStats {
             nonce: block.header.nonce as i32,
             bits: block.header.bits.to_consensus() as i32,
 
-            size: block.size() as i64,
-            stripped_size: block.strippedsize() as i64,
+            size: block.total_size() as i64,
+            stripped_size: block
+                .txdata
+                .iter()
+                .map(Transaction::base_size)
+                .sum::<usize>() as i64,
             vsize: block.txdata.iter().map(Transaction::vsize).sum::<usize>() as i64,
             weight: block.weight().to_wu() as i64,
             empty: block.txdata.len() == 1,
@@ -110,7 +113,7 @@ impl BlockStats {
                 .expect("block should have a coinbase tx")
                 .output
                 .iter()
-                .map(|o| o.value)
+                .map(|o| o.value.to_sat())
                 .sum::<u64>() as i64,
             coinbase_weight: block
                 .txdata
@@ -201,7 +204,7 @@ impl TxStats {
         s.date = date;
 
         for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
-            match tx.version {
+            match tx.version.0 {
                 1 => s.tx_version_1 += 1,
                 2 => s.tx_version_2 += 1,
                 3 => s.tx_version_3 += 1,
@@ -526,7 +529,6 @@ impl InputStats {
                     InputType::Unknown => s.inputs_unknown += 1,
                 }
             }
-
             for input in tx.input.iter() {
                 if txids_in_this_block.contains(&input.previous_output.txid) {
                     s.inputs_spend_in_same_block += 1;
@@ -686,11 +688,11 @@ pub struct FeerateStats {
 
 #[cfg(test)]
 mod tests {
+    use crate::Stats;
+    use bitcoincore_rest::bitcoin;
     use std::fs::File;
     use std::io::BufReader;
     use std::io::Read;
-    use bitcoincore_rest::bitcoin;
-    use crate::Stats;
 
     #[test]
     fn test_block_739990() {
@@ -701,13 +703,35 @@ mod tests {
         let bytes_read = buffer.read_to_end(&mut block_bytes);
         // to keep the capacity up-to-date and copy & paste proof
         assert_eq!(bytes_read.unwrap(), CAPACITY_FOR_739990);
-        let block: bitcoin::Block = bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
+        let block: bitcoin::Block =
+            bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
         let stats = Stats::from_block_and_height(block, 739990);
 
         assert_eq!(stats.block.transactions, 645);
 
         // an earlier version skipped the coinbase transaction
         assert_eq!(stats.input.inputs_witness_coinbase, 1);
+
+        // TODO: extend coverage
+    }
+
+    #[test]
+    fn test_block_361582() {
+        // converted from 361582.hex with xxd -r -p 361582.hex > 361582.bin
+        let mut buffer = BufReader::new(File::open("./testdata/361582.bin").unwrap());
+        const CAPACITY_FOR_361582: usize = 163491;
+        let mut block_bytes: Vec<u8> = Vec::with_capacity(CAPACITY_FOR_361582);
+        let bytes_read = buffer.read_to_end(&mut block_bytes);
+        // to keep the capacity up-to-date and copy & paste proof
+        assert_eq!(bytes_read.unwrap(), CAPACITY_FOR_361582);
+        let block: bitcoin::Block =
+            bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
+        let stats = Stats::from_block_and_height(block, 361582);
+
+        assert_eq!(stats.block.transactions, 277);
+
+        // an earlier version skipped the coinbase transaction
+        assert_eq!(stats.input.inputs_coinbase, 1);
 
         // TODO: extend coverage
     }

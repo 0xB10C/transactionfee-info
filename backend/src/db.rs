@@ -1,11 +1,11 @@
 use crate::schema;
 use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, Stats, TxStats};
-use std::error::Error;
 use diesel::prelude::*;
 use diesel::sql_query;
 use diesel::sql_types::{BigInt, Float, Text};
 use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use std::error::Error;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations/");
 
