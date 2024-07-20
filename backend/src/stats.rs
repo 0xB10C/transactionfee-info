@@ -688,7 +688,7 @@ pub struct FeerateStats {
 #[cfg(test)]
 mod tests {
     use crate::Stats;
-    use bitcoincore_rest::bitcoin;
+    use rawtx_rs::bitcoin;
     use std::fs::File;
     use std::io::BufReader;
     use std::io::Read;
