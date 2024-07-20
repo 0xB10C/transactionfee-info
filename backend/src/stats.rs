@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::DateTime;
 use diesel::prelude::*;
 use rawtx_rs::bitcoin::{Block, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
@@ -16,10 +16,9 @@ pub struct Stats {
 
 impl Stats {
     pub fn from_block_and_height(block: Block, height: i64) -> Stats {
-        let naive_timestamp =
-            NaiveDateTime::from_timestamp_millis(block.header.time as i64 * 1000).unwrap();
-        let datetime: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_timestamp, Utc);
-        let date = datetime.format("%Y-%m-%d").to_string();
+        let timestamp = DateTime::from_timestamp(block.header.time as i64, 0)
+            .expect("invalid block header timestamp");
+        let date = timestamp.format("%Y-%m-%d").to_string();
         let mut tx_infos: Vec<TxInfo> = Vec::with_capacity(block.txdata.len());
         for txinfo_result in block.txdata.iter().map(TxInfo::new) {
             match txinfo_result {
