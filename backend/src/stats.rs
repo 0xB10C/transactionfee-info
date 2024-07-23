@@ -1,8 +1,36 @@
 use chrono::DateTime;
 use diesel::prelude::*;
-use rawtx_rs::bitcoin::{Block, Transaction, Txid};
+use rawtx_rs::bitcoin::{script, Block, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
 use std::collections::HashSet;
+use std::{error, fmt};
+
+#[derive(Debug)]
+pub enum StatsError {
+    Script(script::Error),
+}
+
+impl fmt::Display for StatsError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            StatsError::Script(e) => write!(f, "Bitcoin Script Error: {:?}", e),
+        }
+    }
+}
+
+impl error::Error for StatsError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match *self {
+            StatsError::Script(ref e) => Some(e),
+        }
+    }
+}
+
+impl From<script::Error> for StatsError {
+    fn from(e: script::Error) -> Self {
+        StatsError::Script(e)
+    }
+}
 
 #[derive(Debug)]
 pub struct Stats {
@@ -15,25 +43,22 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub fn from_block_and_height(block: Block, height: i64) -> Stats {
+    pub fn from_block_and_height(block: Block, height: i64) -> Result<Stats, StatsError> {
         let timestamp = DateTime::from_timestamp(block.header.time as i64, 0)
             .expect("invalid block header timestamp");
         let date = timestamp.format("%Y-%m-%d").to_string();
         let mut tx_infos: Vec<TxInfo> = Vec::with_capacity(block.txdata.len());
         for txinfo_result in block.txdata.iter().map(TxInfo::new) {
-            match txinfo_result {
-                Ok(tx_info) => tx_infos.push(tx_info),
-                Err(e) => println!("Error parsing transaction in block {}: {:?}", height, e),
-            }
+            tx_infos.push(txinfo_result?);
         }
 
-        Stats {
+        Ok(Stats {
             block: BlockStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
             tx: TxStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
             input: InputStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
             output: OutputStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
             script: ScriptStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
-        }
+        })
     }
 }
 
@@ -375,7 +400,7 @@ impl ScriptStats {
                             72 => s.sigs_ecdsa_length_72byte += 1,
                             73 => s.sigs_ecdsa_length_73byte += 1,
                             74 => s.sigs_ecdsa_length_74byte += 1,
-                            _ => println!("ECDSA signature with {} bytes..?", sig.length),
+                            _ => panic!("ECDSA signature with {} bytes..?", sig.length),
                         }
 
                         let is_r_low = sig.low_r();
@@ -704,7 +729,8 @@ mod tests {
         assert_eq!(bytes_read.unwrap(), CAPACITY_FOR_739990);
         let block: bitcoin::Block =
             bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
-        let stats = Stats::from_block_and_height(block, 739990);
+        let stats =
+            Stats::from_block_and_height(block, 739990).expect("testdata blocks should not error");
 
         assert_eq!(stats.block.transactions, 645);
 
@@ -725,7 +751,8 @@ mod tests {
         assert_eq!(bytes_read.unwrap(), CAPACITY_FOR_361582);
         let block: bitcoin::Block =
             bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
-        let stats = Stats::from_block_and_height(block, 361582);
+        let stats =
+            Stats::from_block_and_height(block, 361582).expect("testdata blocks should not error");
 
         assert_eq!(stats.block.transactions, 277);
 
