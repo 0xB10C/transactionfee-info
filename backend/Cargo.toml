@@ -9,7 +9,6 @@ edition = "2021"
 serde = "1.0.188"
 diesel = { version = "= 2.1", features = ["sqlite", "64-column-tables"] }
 diesel_migrations = "2.1"
-tokio = { version = "= 1.32.0", features = ["rt", "rt-multi-thread", "macros", "sync"] }
 chrono = "0.4.26"
 rawtx-rs = "0.1.11"
 rayon = "1.7.0"

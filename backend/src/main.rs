@@ -8,9 +8,8 @@ use log::{debug, error, info, warn};
 use stats::Stats;
 use std::io::Write;
 use std::process::exit;
-use std::sync::mpsc as std_mpsc;
-use std::{error, fmt};
-use tokio::sync::mpsc;
+use std::sync::mpsc;
+use std::{error, fmt, thread};
 
 const METRIC_TABLES: [&str; 5] = [
     "block_stats",
@@ -27,6 +26,7 @@ pub enum MainError {
     DBConnection(diesel::result::ConnectionError),
     DBMigration(db::MigrationError),
     REST(rest::RestError),
+    Stats(stats::StatsError),
     IBDNotDone,
 }
 
@@ -38,6 +38,7 @@ impl fmt::Display for MainError {
             MainError::DBMigration(e) => write!(f, "Database Migration Error: {}", e),
             MainError::IBDNotDone => write!(f, "Node is still in IBD"),
             MainError::REST(e) => write!(f, "REST error: {}", e),
+            MainError::Stats(e) => write!(f, "Stats generation error: {}", e),
         }
     }
 }
@@ -49,6 +50,7 @@ impl error::Error for MainError {
             MainError::DBConnection(ref e) => Some(e),
             MainError::DBMigration(ref _e) => None,
             MainError::REST(ref e) => Some(e),
+            MainError::Stats(ref e) => Some(e),
             MainError::IBDNotDone => None,
         }
     }
@@ -78,9 +80,14 @@ impl From<rest::RestError> for MainError {
     }
 }
 
-#[tokio::main]
-async fn main() {
-    if let Err(e) = collect_statistics().await {
+impl From<stats::StatsError> for MainError {
+    fn from(e: stats::StatsError) -> Self {
+        MainError::Stats(e)
+    }
+}
+
+fn main() {
+    if let Err(e) = collect_statistics() {
         error!("Could not collect statistics: {}", e);
         exit(1);
     };
@@ -91,7 +98,7 @@ async fn main() {
     };
 }
 
-async fn collect_statistics() -> Result<(), MainError> {
+fn collect_statistics() -> Result<(), MainError> {
     env_logger::init();
 
     let connection = &mut db::establish_connection()?;
@@ -114,51 +121,45 @@ async fn collect_statistics() -> Result<(), MainError> {
     }
     let rest_height = chain_info.blocks;
 
-    let (block_sender, mut block_receiver) = mpsc::channel(1);
-    let (stat_sender, stat_receiver) = std_mpsc::sync_channel(1);
+    let (block_sender, block_receiver) = mpsc::sync_channel(10);
+    let (stat_sender, stat_receiver) = mpsc::sync_channel(100);
 
     // get-blocks task
     // gets blocks from the Bitcoin Core REST interface and sends them onwards
     // to the `calc-stats` task
-    tokio::spawn(async move {
+    let get_blocks_task = thread::spawn(move || -> Result<(), MainError> {
         for height in std::cmp::max(db_height - 10, 0)..std::cmp::max((rest_height - 6) as i64, 0) {
             debug!("getting block height {}", height);
             let block = match client.block_at_height(height as u64) {
                 Ok(block) => block,
                 Err(e) => {
                     error!("Could not get block at height {}: {}", height, e);
-                    return;
+                    return Err(MainError::REST(e));
                 }
             };
-            if let Err(_) = block_sender.send((height as i64, block)).await {
+            if let Err(_) = block_sender.send((height as i64, block)) {
                 warn!(
                     "during sending block at height {} to stats generator: block receiver dropped",
                     height
                 );
-                return;
+                // We can return OK here. When the receiver is dropped, there
+                // probably was an error in the calc-stats task.
+                return Ok(());
             }
         }
+        Ok(())
     });
 
     // calc-stats task
     // calculates the per block stats and sends them onwards to the batch-insert
     // task
-    tokio::spawn(async move {
-        while let Some((height, block)) = block_receiver.recv().await {
+    let calc_stats_task = thread::spawn(move || -> Result<(), MainError> {
+        while let Ok((height, block)) = block_receiver.recv() {
             debug!("calculating stats for block at height {}..", height);
 
             let stat_sender_clone = stat_sender.clone();
             rayon::spawn(move || {
-                let stats = match Stats::from_block_and_height(block, height) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        error!(
-                            "Could not generate stat for block at height {}: {}",
-                            height, e
-                        );
-                        exit(1);
-                    }
-                };
+                let stats = Stats::from_block_and_height(block, height);
                 if let Err(e) = stat_sender_clone.send(stats) {
                     warn!(
                         "during sending stats at height {} to db writer: stats receiver dropped: {}",
@@ -168,35 +169,52 @@ async fn collect_statistics() -> Result<(), MainError> {
                 }
             });
         }
+        Ok(())
     });
 
     // batch-insert task
     // inserts the block stats in batches
-    let mut stat_buffer = Vec::with_capacity(100);
-    while let Ok(stat) = stat_receiver.recv() {
-        stat_buffer.push(stat);
-        if stat_buffer.len() >= 100 {
-            info!(
-                "writing a batch of {} block-stats to database (max height: {})",
-                stat_buffer.len(),
-                stat_buffer
-                    .iter()
-                    .map(|s| s.block.height)
-                    .max()
-                    .unwrap_or_default()
-            );
-            db::insert_stats(connection, &stat_buffer)?;
-            stat_buffer.clear();
-        }
-    }
+    let batch_insert_task = thread::spawn(move || -> Result<(), MainError> {
+        let connection = &mut db::establish_connection()?;
+        let mut stat_buffer = Vec::with_capacity(100);
+        while let Ok(stat_result) = stat_receiver.recv() {
+            let stat = stat_result?;
 
-    // once the stat_receiver is closed, insert the remaining buffer
-    // contents into the database
-    info!(
-        "writing a batch of {} block-stats to database for shutdown",
-        stat_buffer.len()
-    );
-    db::insert_stats(connection, &stat_buffer)?;
+            stat_buffer.push(stat);
+            if stat_buffer.len() >= 100 {
+                info!(
+                    "writing a batch of {} block-stats to database (max height: {})",
+                    stat_buffer.len(),
+                    stat_buffer
+                        .iter()
+                        .map(|s| s.block.height)
+                        .max()
+                        .unwrap_or_default()
+                );
+                db::insert_stats(connection, &stat_buffer)?;
+                stat_buffer.clear();
+            }
+        }
+
+        // once the stat_receiver is closed, insert the remaining buffer
+        // contents into the database
+        info!(
+            "writing a batch of {} block-stats to database for shutdown",
+            stat_buffer.len()
+        );
+        db::insert_stats(connection, &stat_buffer)?;
+        Ok(())
+    });
+
+    get_blocks_task
+        .join()
+        .expect("The get_blocks_task thread panicked")?;
+    calc_stats_task
+        .join()
+        .expect("The calc_stats_task thread panicked")?;
+    batch_insert_task
+        .join()
+        .expect("The batch_insert_task thread panicked")?;
 
     Ok(())
 }
