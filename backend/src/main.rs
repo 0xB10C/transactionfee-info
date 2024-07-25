@@ -4,6 +4,7 @@ mod schema;
 mod stats;
 
 use crate::db::TableInfo;
+use env_logger::Env;
 use log::{debug, error, info, warn};
 use stats::Stats;
 use std::io::Write;
@@ -19,6 +20,7 @@ const METRIC_TABLES: [&str; 5] = [
     "output_stats",
 ];
 const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 5] = ["height", "date", "version", "nonce", "bits"];
+const DEFAULT_LOG_LEVEL: &str = "info";
 
 #[derive(Debug)]
 pub enum MainError {
@@ -87,6 +89,8 @@ impl From<stats::StatsError> for MainError {
 }
 
 fn main() {
+    env_logger::Builder::from_env(Env::default().default_filter_or(DEFAULT_LOG_LEVEL)).init();
+
     if let Err(e) = collect_statistics() {
         error!("Could not collect statistics: {}", e);
         exit(1);
@@ -99,8 +103,6 @@ fn main() {
 }
 
 fn collect_statistics() -> Result<(), MainError> {
-    env_logger::init();
-
     let connection = &mut db::establish_connection()?;
     db::run_pending_migrations(connection)?;
 
