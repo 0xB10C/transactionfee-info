@@ -33,9 +33,8 @@ pub struct DateColumn {
     pub date: String,
 }
 
-pub fn establish_connection() -> Result<SqliteConnection, ConnectionError> {
-    let database_url = "db.sqlite"; // TODO:
-    SqliteConnection::establish(&database_url)
+pub fn establish_connection(database_path: &str) -> Result<SqliteConnection, ConnectionError> {
+    SqliteConnection::establish(&database_path)
 }
 
 pub fn run_pending_migrations(

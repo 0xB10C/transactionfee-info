@@ -4,13 +4,14 @@ mod schema;
 mod stats;
 
 use crate::db::TableInfo;
+use clap::Parser;
 use env_logger::Env;
 use log::{debug, error, info, warn};
 use stats::Stats;
 use std::io::Write;
 use std::process::exit;
 use std::sync::mpsc;
-use std::{error, fmt, thread};
+use std::{error, fmt, io, thread};
 
 const METRIC_TABLES: [&str; 5] = [
     "block_stats",
@@ -30,6 +31,7 @@ pub enum MainError {
     REST(rest::RestError),
     Stats(stats::StatsError),
     IBDNotDone,
+    IOError(io::Error),
 }
 
 impl fmt::Display for MainError {
@@ -41,6 +43,7 @@ impl fmt::Display for MainError {
             MainError::IBDNotDone => write!(f, "Node is still in IBD"),
             MainError::REST(e) => write!(f, "REST error: {}", e),
             MainError::Stats(e) => write!(f, "Stats generation error: {}", e),
+            MainError::IOError(e) => write!(f, "IO error: {}", e),
         }
     }
 }
@@ -54,6 +57,7 @@ impl error::Error for MainError {
             MainError::REST(ref e) => Some(e),
             MainError::Stats(ref e) => Some(e),
             MainError::IBDNotDone => None,
+            MainError::IOError(ref e) => Some(e),
         }
     }
 }
@@ -88,31 +92,74 @@ impl From<stats::StatsError> for MainError {
     }
 }
 
+impl From<io::Error> for MainError {
+    fn from(e: io::Error) -> Self {
+        MainError::IOError(e)
+    }
+}
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Host part of the Bitcoin Core REST API endpoint
+    #[arg(long, default_value = "localhost")]
+    rest_host: String,
+
+    /// Port part of the Bitcoin Core REST API endpoint
+    #[arg(long, default_value_t = 8333)]
+    rest_port: u16,
+
+    /// Path to the SQLite database file where the stats are stored
+    #[arg(long, default_value = "./db.sqlite")]
+    database_path: String,
+
+    /// Path where the CSV files should be written to
+    #[arg(long, default_value = "./csv")]
+    csv_path: String,
+
+    /// Flag to disable CSV file writing
+    #[arg(long, default_value_t = false)]
+    no_csv: bool,
+
+    /// Flag to disable stat generation
+    #[arg(long, default_value_t = false)]
+    no_stats: bool,
+}
+
 fn main() {
     env_logger::Builder::from_env(Env::default().default_filter_or(DEFAULT_LOG_LEVEL)).init();
 
-    if let Err(e) = collect_statistics() {
-        error!("Could not collect statistics: {}", e);
-        exit(1);
-    };
+    let args = Args::parse();
 
-    if let Err(e) = write_csv_files() {
-        error!("Could not write CSV files to disk: {}", e);
-        exit(1);
-    };
+    if !args.no_stats {
+        if let Err(e) = collect_statistics(&args) {
+            error!("Could not collect statistics: {}", e);
+            exit(1);
+        };
+    }
+
+    if !args.no_csv {
+        if let Err(e) = write_csv_files(&args) {
+            error!("Could not write CSV files to disk: {}", e);
+            exit(1);
+        };
+    }
 }
 
-fn collect_statistics() -> Result<(), MainError> {
-    let connection = &mut db::establish_connection()?;
+fn collect_statistics(args: &Args) -> Result<(), MainError> {
+    let connection = &mut db::establish_connection(&args.database_path)?;
     db::run_pending_migrations(connection)?;
 
     let db_height: i64 = db::get_db_block_height(connection)?.unwrap_or_default();
 
-    let client = rest::RestClient::new("localhost", 38332);
+    let client = rest::RestClient::new(&args.rest_host, args.rest_port);
     let chain_info = match client.chain_info() {
         Ok(chain_info) => chain_info,
         Err(e) => {
-            error!("Could load chain information from Bitcoin Core: {}", e); // TODO: host + port
+            error!(
+                "Could load chain information from Bitcoin Core at {}:{}: {}",
+                args.rest_host, args.rest_port, e
+            );
             return Err(MainError::REST(e));
         }
     };
@@ -176,8 +223,9 @@ fn collect_statistics() -> Result<(), MainError> {
 
     // batch-insert task
     // inserts the block stats in batches
+    let database_path_clone = args.database_path.clone();
     let batch_insert_task = thread::spawn(move || -> Result<(), MainError> {
-        let connection = &mut db::establish_connection()?;
+        let connection = &mut db::establish_connection(&database_path_clone)?;
         let mut stat_buffer = Vec::with_capacity(100);
         while let Ok(stat_result) = stat_receiver.recv() {
             let stat = stat_result?;
@@ -221,18 +269,18 @@ fn collect_statistics() -> Result<(), MainError> {
     Ok(())
 }
 
-fn write_csv_files() -> Result<(), MainError> {
-    let connection = &mut db::establish_connection()?;
+fn write_csv_files(args: &Args) -> Result<(), MainError> {
+    let connection = &mut db::establish_connection(&args.database_path)?;
 
     info!("Generating date.csv file.");
     let date_column = db::date_column(connection);
-    let mut date_file = std::fs::File::create("csv/date.csv").unwrap();
+    let mut date_file = std::fs::File::create(format!("{}/date.csv", args.csv_path))?;
     let date_content: String = date_column
         .iter()
         .map(|row| format!("{}\n", row.date))
         .collect();
-    date_file.write_all("date\n".as_bytes()).unwrap();
-    date_file.write_all(date_content.as_bytes()).unwrap();
+    date_file.write_all("date\n".as_bytes())?;
+    date_file.write_all(date_content.as_bytes())?;
 
     for table in METRIC_TABLES.iter() {
         let columns = db::list_column_names(connection, table)?;
@@ -247,25 +295,23 @@ fn write_csv_files() -> Result<(), MainError> {
             info!("Generating metrics for '{}' in table '{}'.", column, table);
             let avg_and_sum = db::column_sum_and_avg_by_date(connection, &column, table);
 
-            let mut avg_file = std::fs::File::create(format!("csv/{}_avg.csv", column)).unwrap();
+            let mut avg_file =
+                std::fs::File::create(format!("{}/{}_avg.csv", args.csv_path, column))?;
             let avg_content: String = avg_and_sum
                 .iter()
                 .map(|aas| format!("{:.4}\n", aas.avg))
                 .collect();
-            avg_file
-                .write_all(format!("{}_avg\n", column).as_bytes())
-                .unwrap();
-            avg_file.write_all(avg_content.as_bytes()).unwrap();
+            avg_file.write_all(format!("{}_avg\n", column).as_bytes())?;
+            avg_file.write_all(avg_content.as_bytes())?;
 
-            let mut sum_file = std::fs::File::create(format!("csv/{}_sum.csv", column)).unwrap();
+            let mut sum_file =
+                std::fs::File::create(format!("{}/{}_sum.csv", args.csv_path, column))?;
             let sum_content: String = avg_and_sum
                 .iter()
                 .map(|aas| format!("{}\n", aas.sum))
                 .collect();
-            sum_file
-                .write_all(format!("{}_sum\n", column).as_bytes())
-                .unwrap();
-            sum_file.write_all(sum_content.as_bytes()).unwrap();
+            sum_file.write_all(format!("{}_sum\n", column).as_bytes())?;
+            sum_file.write_all(sum_content.as_bytes())?;
         }
     }
     Ok(())
