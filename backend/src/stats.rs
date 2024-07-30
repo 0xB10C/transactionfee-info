@@ -349,6 +349,7 @@ pub struct ScriptStats {
     sigs_ecdsa_length_72byte: i32,
     sigs_ecdsa_length_73byte: i32,
     sigs_ecdsa_length_74byte: i32,
+    sigs_ecdsa_length_75byte_or_more: i32,
 
     sigs_ecdsa_low_r: i32,
     sigs_ecdsa_high_r: i32,
@@ -412,6 +413,7 @@ impl ScriptStats {
                             72 => s.sigs_ecdsa_length_72byte += 1,
                             73 => s.sigs_ecdsa_length_73byte += 1,
                             74 => s.sigs_ecdsa_length_74byte += 1,
+                            75.. => s.sigs_ecdsa_length_75byte_or_more += 1,
                             _ => panic!("ECDSA signature with {} bytes..?", sig.length),
                         }
 
