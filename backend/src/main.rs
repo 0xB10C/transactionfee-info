@@ -215,6 +215,13 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
                         "Could not calculate stats for block at height {}: {}",
                         height, e
                     );
+                    // We can't continue here and probably need to fix somehting
+                    // in rawtx_rs..
+                    panic!(
+                        "Could not process block {}: {}",
+                        height,
+                        MainError::Stats(e)
+                    );
                 };
                 if let Err(e) = stat_sender_clone.send(stats_result) {
                     warn!(
