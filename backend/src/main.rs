@@ -106,7 +106,7 @@ struct Args {
     rest_host: String,
 
     /// Port part of the Bitcoin Core REST API endpoint
-    #[arg(long, default_value_t = 8333)]
+    #[arg(long, default_value_t = 8332)]
     rest_port: u16,
 
     /// Path to the SQLite database file where the stats are stored
