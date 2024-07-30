@@ -37,6 +37,18 @@ pub fn establish_connection(database_path: &str) -> Result<SqliteConnection, Con
     SqliteConnection::establish(&database_path)
 }
 
+pub fn performance_tune(conn: &mut SqliteConnection) -> Result<(), diesel::result::Error> {
+    sql_query(
+        r#"
+        pragma journal_mode = WAL;
+        pragma synchronous = normal;
+        pragma temp_store = memory;
+    "#,
+    )
+    .execute(conn)?;
+    Ok(())
+}
+
 pub fn run_pending_migrations(
     conn: &mut SqliteConnection,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {

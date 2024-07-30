@@ -22,6 +22,7 @@ const METRIC_TABLES: [&str; 5] = [
 ];
 const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 5] = ["height", "date", "version", "nonce", "bits"];
 const DEFAULT_LOG_LEVEL: &str = "info";
+const DATABASE_BATCH_SIZE: usize = 100;
 
 #[derive(Debug)]
 pub enum MainError {
@@ -226,12 +227,13 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
     let database_path_clone = args.database_path.clone();
     let batch_insert_task = thread::spawn(move || -> Result<(), MainError> {
         let connection = &mut db::establish_connection(&database_path_clone)?;
-        let mut stat_buffer = Vec::with_capacity(100);
+        db::performance_tune(connection)?;
+        let mut stat_buffer = Vec::with_capacity(DATABASE_BATCH_SIZE);
         while let Ok(stat_result) = stat_receiver.recv() {
             let stat = stat_result?;
 
             stat_buffer.push(stat);
-            if stat_buffer.len() >= 100 {
+            if stat_buffer.len() >= DATABASE_BATCH_SIZE {
                 info!(
                     "writing a batch of {} block-stats to database (max height: {})",
                     stat_buffer.len(),
