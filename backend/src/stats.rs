@@ -1,5 +1,6 @@
 use chrono::DateTime;
 use diesel::prelude::*;
+use log::error;
 use rawtx_rs::bitcoin::{script, Block, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
 use std::collections::HashSet;
@@ -48,8 +49,19 @@ impl Stats {
             .expect("invalid block header timestamp");
         let date = timestamp.format("%Y-%m-%d").to_string();
         let mut tx_infos: Vec<TxInfo> = Vec::with_capacity(block.txdata.len());
-        for txinfo_result in block.txdata.iter().map(TxInfo::new) {
-            tx_infos.push(txinfo_result?);
+        for tx in block.txdata.iter() {
+            match TxInfo::new(tx) {
+                Ok(txinfo) => tx_infos.push(txinfo),
+                Err(e) => {
+                    error!(
+                        "Could not create TxInfo for {} in block {}: {}",
+                        tx.txid(),
+                        height,
+                        e
+                    );
+                    return Err(StatsError::Script(e));
+                }
+            }
         }
 
         Ok(Stats {
