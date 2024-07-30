@@ -224,11 +224,11 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
                     );
                 };
                 if let Err(e) = stat_sender_clone.send(stats_result) {
-                    warn!(
+                    // We can't continue here..
+                    panic!(
                         "during sending stats at height {} to db writer: stats receiver dropped: {}",
                         height, e
                     );
-                    return;
                 }
             });
         }
