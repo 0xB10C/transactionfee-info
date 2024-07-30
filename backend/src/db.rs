@@ -109,7 +109,7 @@ fn insert_block_stats(
     stats: &Vec<BlockStats>,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::block_stats;
-    debug!("Inserting {} block stats", stats.len());
+    debug!("Inserting a batch of {} block stats", stats.len());
 
     if let Err(e) = diesel::insert_into(block_stats::table)
         .values(stats)
@@ -118,6 +118,11 @@ fn insert_block_stats(
         match e {
             diesel::result::Error::DatabaseError(db_error, _) => match db_error {
                 diesel::result::DatabaseErrorKind::UniqueViolation => {
+                    debug!(
+                        "Falling back to individually inserting {} block stats: {}",
+                        stats.len(),
+                        e
+                    );
                     for stat in stats.iter() {
                         diesel::insert_into(block_stats::table)
                             .values(stat)
@@ -141,7 +146,7 @@ fn insert_tx_stats(
     stats: &Vec<TxStats>,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::tx_stats;
-    debug!("Inserting {} tx stats", stats.len());
+    debug!("Inserting a batch of {} tx stats", stats.len());
 
     if let Err(e) = diesel::insert_into(tx_stats::table)
         .values(stats)
@@ -150,6 +155,11 @@ fn insert_tx_stats(
         match e {
             diesel::result::Error::DatabaseError(db_error, _) => match db_error {
                 diesel::result::DatabaseErrorKind::UniqueViolation => {
+                    debug!(
+                        "Falling back to individually inserting {} tx stats: {}",
+                        stats.len(),
+                        e
+                    );
                     for stat in stats.iter() {
                         diesel::insert_into(tx_stats::table)
                             .values(stat)
@@ -173,7 +183,7 @@ fn insert_input_stats(
     stats: &Vec<InputStats>,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::input_stats;
-    debug!("Inserting {} input stats", stats.len());
+    debug!("Inserting a batch of {} input stats", stats.len());
 
     if let Err(e) = diesel::insert_into(input_stats::table)
         .values(stats)
@@ -182,6 +192,11 @@ fn insert_input_stats(
         match e {
             diesel::result::Error::DatabaseError(db_error, _) => match db_error {
                 diesel::result::DatabaseErrorKind::UniqueViolation => {
+                    debug!(
+                        "Falling back to individually inserting {} input stats: {}",
+                        stats.len(),
+                        e
+                    );
                     for stat in stats.iter() {
                         diesel::insert_into(input_stats::table)
                             .values(stat)
@@ -205,7 +220,7 @@ fn insert_output_stats(
     stats: &Vec<OutputStats>,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::output_stats;
-    debug!("Inserting {} output stats", stats.len());
+    debug!("Inserting a batch of {} output stats", stats.len());
 
     if let Err(e) = diesel::insert_into(output_stats::table)
         .values(stats)
@@ -214,6 +229,11 @@ fn insert_output_stats(
         match e {
             diesel::result::Error::DatabaseError(db_error, _) => match db_error {
                 diesel::result::DatabaseErrorKind::UniqueViolation => {
+                    debug!(
+                        "Falling back to individually inserting {} output stats: {}",
+                        stats.len(),
+                        e
+                    );
                     for stat in stats.iter() {
                         diesel::insert_into(output_stats::table)
                             .values(stat)
@@ -237,7 +257,7 @@ fn insert_script_stats(
     stats: &Vec<ScriptStats>,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::script_stats;
-    debug!("Inserting {} script stats", stats.len());
+    debug!("Inserting a batch of {} script stats", stats.len());
 
     if let Err(e) = diesel::insert_into(script_stats::table)
         .values(stats)
@@ -246,6 +266,11 @@ fn insert_script_stats(
         match e {
             diesel::result::Error::DatabaseError(db_error, _) => match db_error {
                 diesel::result::DatabaseErrorKind::UniqueViolation => {
+                    debug!(
+                        "Falling back to individually inserting {} script stats: {}",
+                        stats.len(),
+                        e
+                    );
                     for stat in stats.iter() {
                         diesel::insert_into(script_stats::table)
                             .values(stat)
