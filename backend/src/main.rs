@@ -229,8 +229,16 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
         let connection = &mut db::establish_connection(&database_path_clone)?;
         db::performance_tune(connection)?;
         let mut stat_buffer = Vec::with_capacity(DATABASE_BATCH_SIZE);
-        while let Ok(stat_result) = stat_receiver.recv() {
-            let stat = stat_result?;
+
+        loop {
+            let stat_result = stat_receiver.recv();
+            let stat = match stat_result {
+                Ok(stat) => stat?,
+                Err(e) => {
+                    error!("db writer could not receive stat: {}", e);
+                    break;
+                }
+            };
 
             stat_buffer.push(stat);
             if stat_buffer.len() >= DATABASE_BATCH_SIZE {
