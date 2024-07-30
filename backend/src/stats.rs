@@ -5,7 +5,7 @@ use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::
 use std::collections::HashSet;
 use std::{error, fmt};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StatsError {
     Script(script::Error),
 }
@@ -32,7 +32,7 @@ impl From<script::Error> for StatsError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Stats {
     pub block: BlockStats,
     pub tx: TxStats,

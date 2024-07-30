@@ -209,8 +209,14 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
 
             let stat_sender_clone = stat_sender.clone();
             rayon::spawn(move || {
-                let stats = Stats::from_block_and_height(block, height);
-                if let Err(e) = stat_sender_clone.send(stats) {
+                let stats_result = Stats::from_block_and_height(block, height);
+                if let Err(e) = stats_result.clone() {
+                    error!(
+                        "Could not calculate stats for block at height {}: {}",
+                        height, e
+                    );
+                };
+                if let Err(e) = stat_sender_clone.send(stats_result) {
                     warn!(
                         "during sending stats at height {} to db writer: stats receiver dropped: {}",
                         height, e
