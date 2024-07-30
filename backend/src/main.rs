@@ -231,9 +231,15 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
         let mut stat_buffer = Vec::with_capacity(DATABASE_BATCH_SIZE);
 
         loop {
-            let stat_result = stat_receiver.recv();
-            let stat = match stat_result {
-                Ok(stat) => stat?,
+            let stat_recv_result = stat_receiver.recv();
+            let stat = match stat_recv_result {
+                Ok(stat_result) => match stat_result {
+                    Ok(stat) => stat,
+                    Err(e) => {
+                        error!("Could write stat: {}", e);
+                        return Err(MainError::Stats(e));
+                    }
+                },
                 Err(e) => {
                     error!("db writer could not receive stat: {}", e);
                     break;
