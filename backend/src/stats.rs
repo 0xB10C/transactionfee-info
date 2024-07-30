@@ -1,20 +1,20 @@
 use chrono::DateTime;
 use diesel::prelude::*;
 use log::error;
-use rawtx_rs::bitcoin::{script, Block, Transaction, Txid};
+use rawtx_rs::bitcoin::{Block, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
 use std::collections::HashSet;
 use std::{error, fmt};
 
 #[derive(Debug, Clone)]
 pub enum StatsError {
-    Script(script::Error),
+    TxInfoError(rawtx_rs::tx::TxInfoError),
 }
 
 impl fmt::Display for StatsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            StatsError::Script(e) => write!(f, "Bitcoin Script Error: {:?}", e),
+            StatsError::TxInfoError(e) => write!(f, "Bitcoin Script Error: {:?}", e),
         }
     }
 }
@@ -22,14 +22,14 @@ impl fmt::Display for StatsError {
 impl error::Error for StatsError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            StatsError::Script(ref e) => Some(e),
+            StatsError::TxInfoError(ref e) => Some(e),
         }
     }
 }
 
-impl From<script::Error> for StatsError {
-    fn from(e: script::Error) -> Self {
-        StatsError::Script(e)
+impl From<rawtx_rs::tx::TxInfoError> for StatsError {
+    fn from(e: rawtx_rs::tx::TxInfoError) -> Self {
+        StatsError::TxInfoError(e)
     }
 }
 
@@ -59,7 +59,7 @@ impl Stats {
                         height,
                         e
                     );
-                    return Err(StatsError::Script(e));
+                    return Err(StatsError::TxInfoError(e));
                 }
             }
         }
