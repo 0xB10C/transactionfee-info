@@ -84,6 +84,7 @@ CREATE TABLE script_stats (
 	sigs_ecdsa_length_72byte          INTEGER   NOT NULL,
 	sigs_ecdsa_length_73byte          INTEGER   NOT NULL,
 	sigs_ecdsa_length_74byte          INTEGER   NOT NULL,
+	sigs_ecdsa_length_75byte_or_more  INTEGER   NOT NULL,
 
 	sigs_ecdsa_low_r                  INTEGER   NOT NULL,
 	sigs_ecdsa_high_r                 INTEGER   NOT NULL,

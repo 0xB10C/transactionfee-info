@@ -158,6 +158,7 @@ diesel::table! {
         sigs_ecdsa_length_72byte -> Integer,
         sigs_ecdsa_length_73byte -> Integer,
         sigs_ecdsa_length_74byte -> Integer,
+        sigs_ecdsa_length_75byte_or_more -> Integer,
         sigs_ecdsa_low_r -> Integer,
         sigs_ecdsa_high_r -> Integer,
         sigs_ecdsa_low_s -> Integer,

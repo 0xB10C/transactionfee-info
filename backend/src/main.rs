@@ -209,13 +209,26 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
 
             let stat_sender_clone = stat_sender.clone();
             rayon::spawn(move || {
-                let stats = Stats::from_block_and_height(block, height);
-                if let Err(e) = stat_sender_clone.send(stats) {
-                    warn!(
+                let stats_result = Stats::from_block_and_height(block, height);
+                if let Err(e) = stats_result.clone() {
+                    error!(
+                        "Could not calculate stats for block at height {}: {}",
+                        height, e
+                    );
+                    // We can't continue here and probably need to fix somehting
+                    // in rawtx_rs..
+                    panic!(
+                        "Could not process block {}: {}",
+                        height,
+                        MainError::Stats(e)
+                    );
+                };
+                if let Err(e) = stat_sender_clone.send(stats_result) {
+                    // We can't continue here..
+                    panic!(
                         "during sending stats at height {} to db writer: stats receiver dropped: {}",
                         height, e
                     );
-                    return;
                 }
             });
         }
@@ -229,8 +242,22 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
         let connection = &mut db::establish_connection(&database_path_clone)?;
         db::performance_tune(connection)?;
         let mut stat_buffer = Vec::with_capacity(DATABASE_BATCH_SIZE);
-        while let Ok(stat_result) = stat_receiver.recv() {
-            let stat = stat_result?;
+
+        loop {
+            let stat_recv_result = stat_receiver.recv();
+            let stat = match stat_recv_result {
+                Ok(stat_result) => match stat_result {
+                    Ok(stat) => stat,
+                    Err(e) => {
+                        error!("Could write stat: {}", e);
+                        return Err(MainError::Stats(e));
+                    }
+                },
+                Err(e) => {
+                    error!("db writer could not receive stat: {}", e);
+                    break;
+                }
+            };
 
             stat_buffer.push(stat);
             if stat_buffer.len() >= DATABASE_BATCH_SIZE {

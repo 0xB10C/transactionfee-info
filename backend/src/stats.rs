@@ -1,19 +1,20 @@
 use chrono::DateTime;
 use diesel::prelude::*;
-use rawtx_rs::bitcoin::{script, Block, Transaction, Txid};
+use log::error;
+use rawtx_rs::bitcoin::{Block, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
 use std::collections::HashSet;
 use std::{error, fmt};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StatsError {
-    Script(script::Error),
+    TxInfoError(rawtx_rs::tx::TxInfoError),
 }
 
 impl fmt::Display for StatsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            StatsError::Script(e) => write!(f, "Bitcoin Script Error: {:?}", e),
+            StatsError::TxInfoError(e) => write!(f, "Bitcoin Script Error: {:?}", e),
         }
     }
 }
@@ -21,18 +22,18 @@ impl fmt::Display for StatsError {
 impl error::Error for StatsError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            StatsError::Script(ref e) => Some(e),
+            StatsError::TxInfoError(ref e) => Some(e),
         }
     }
 }
 
-impl From<script::Error> for StatsError {
-    fn from(e: script::Error) -> Self {
-        StatsError::Script(e)
+impl From<rawtx_rs::tx::TxInfoError> for StatsError {
+    fn from(e: rawtx_rs::tx::TxInfoError) -> Self {
+        StatsError::TxInfoError(e)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Stats {
     pub block: BlockStats,
     pub tx: TxStats,
@@ -48,8 +49,19 @@ impl Stats {
             .expect("invalid block header timestamp");
         let date = timestamp.format("%Y-%m-%d").to_string();
         let mut tx_infos: Vec<TxInfo> = Vec::with_capacity(block.txdata.len());
-        for txinfo_result in block.txdata.iter().map(TxInfo::new) {
-            tx_infos.push(txinfo_result?);
+        for tx in block.txdata.iter() {
+            match TxInfo::new(tx) {
+                Ok(txinfo) => tx_infos.push(txinfo),
+                Err(e) => {
+                    error!(
+                        "Could not create TxInfo for {} in block {}: {}",
+                        tx.txid(),
+                        height,
+                        e
+                    );
+                    return Err(StatsError::TxInfoError(e));
+                }
+            }
         }
 
         Ok(Stats {
@@ -337,6 +349,7 @@ pub struct ScriptStats {
     sigs_ecdsa_length_72byte: i32,
     sigs_ecdsa_length_73byte: i32,
     sigs_ecdsa_length_74byte: i32,
+    sigs_ecdsa_length_75byte_or_more: i32,
 
     sigs_ecdsa_low_r: i32,
     sigs_ecdsa_high_r: i32,
@@ -400,6 +413,7 @@ impl ScriptStats {
                             72 => s.sigs_ecdsa_length_72byte += 1,
                             73 => s.sigs_ecdsa_length_73byte += 1,
                             74 => s.sigs_ecdsa_length_74byte += 1,
+                            75.. => s.sigs_ecdsa_length_75byte_or_more += 1,
                             _ => panic!("ECDSA signature with {} bytes..?", sig.length),
                         }
 

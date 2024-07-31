@@ -7,6 +7,7 @@ const CSVs = [
   d3.csv("/csv/sigs_ecdsa_length_72byte_sum.csv"),
   d3.csv("/csv/sigs_ecdsa_length_73byte_sum.csv"),
   d3.csv("/csv/sigs_ecdsa_length_74byte_sum.csv"),
+  d3.csv("/csv/sigs_ecdsa_length_75byte_or_more_sum.csv"),
 ]
 
 function preprocess(data) {
@@ -19,7 +20,8 @@ function preprocess(data) {
     const len72 = parseFloat(data[3][i].sigs_ecdsa_length_72byte_sum)
     const len73 = parseFloat(data[4][i].sigs_ecdsa_length_73byte_sum)
     const len74 = parseFloat(data[5][i].sigs_ecdsa_length_74byte_sum)
-    total = total + ((len70*70) + (len71*71) + (len72*72) + (len73*73) + (len74*74)) / 1000000000
+    const len75 = parseFloat(data[6][i].sigs_ecdsa_length_75byte_or_more_sum)
+    total = total + ((len70*70) + (len71*71) + (len72*72) + (len73*73) + (len74*74) + (len75*75)) / 1000000000
     const y = total
     combinedData.push({date, y})
   }
