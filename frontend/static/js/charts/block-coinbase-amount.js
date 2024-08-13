@@ -17,7 +17,12 @@ function preprocess(data) {
 }
 
 const startDate = d3.timeParse("%Y-%m-%d")("2010-01-01")
-const annotations = [{ 'text': '1st Halvening', 'date': '2012-11-28' }, { 'text': '2nd Halvening', 'date': '2016-07-09' }, { 'text': '3rd Halvening', 'date': '2020-05-11' } ]
+const annotations = [
+  { 'text': '1st halving', 'date': '2012-11-28' },
+  { 'text': '2nd halving', 'date': '2016-07-09' },
+  { 'text': '3rd halving', 'date': '2020-05-11' }, 
+  { 'text': '4th halving', 'date': '2024-04-20' } 
+]
 const labels = {"y": "Amount"}
 const dataType = dataTypeFloat
 const unit = "BTC"
