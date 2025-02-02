@@ -505,6 +505,7 @@ pub struct InputStats {
     inputs_witness_coinbase: i32,
     inputs_p2tr_keypath: i32,
     inputs_p2tr_scriptpath: i32,
+    inputs_p2a: i32,
     inputs_unknown: i32,
 
     inputs_spend_in_same_block: i32,
@@ -564,6 +565,7 @@ impl InputStats {
                     InputType::CoinbaseWitness => s.inputs_witness_coinbase += 1,
                     InputType::P2trkp => s.inputs_p2tr_keypath += 1,
                     InputType::P2trsp => s.inputs_p2tr_scriptpath += 1,
+                    InputType::P2a => s.inputs_p2a += 1,
                     InputType::Unknown => s.inputs_unknown += 1,
                 }
             }
@@ -593,6 +595,7 @@ pub struct OutputStats {
     outputs_p2wsh: i32,
     outputs_opreturn: i32,
     outputs_p2tr: i32,
+    outputs_p2a: i32,
     outputs_unknown: i32,
 
     outputs_p2pk_amount: i64,
@@ -602,6 +605,7 @@ pub struct OutputStats {
     outputs_p2sh_amount: i64,
     outputs_p2wsh_amount: i64,
     outputs_p2tr_amount: i64,
+    outputs_p2a_amount: i64,
     outputs_opreturn_amount: i64,
     outputs_unknown_amount: i64,
 }
@@ -648,6 +652,10 @@ impl OutputStats {
                     OutputType::P2tr => {
                         s.outputs_p2tr += 1;
                         s.outputs_p2tr_amount += output.value.to_sat() as i64;
+                    }
+                    OutputType::P2a => {
+                        s.outputs_p2a += 1;
+                        s.outputs_p2a_amount += output.value.to_sat() as i64;
                     }
                     OutputType::OpReturn(_) => {
                         s.outputs_opreturn += 1;

@@ -109,6 +109,7 @@ diesel::table! {
         inputs_p2tr_scriptpath -> Integer,
         inputs_unknown -> Integer,
         inputs_spend_in_same_block -> Integer,
+        inputs_p2a -> Integer,
     }
 }
 
@@ -134,6 +135,8 @@ diesel::table! {
         outputs_p2tr_amount -> BigInt,
         outputs_opreturn_amount -> BigInt,
         outputs_unknown_amount -> BigInt,
+        outputs_p2a -> Integer,
+        outputs_p2a_amount -> BigInt,
     }
 }
 
