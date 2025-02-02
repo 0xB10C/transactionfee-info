@@ -55,7 +55,7 @@ impl Stats {
                 Err(e) => {
                     error!(
                         "Could not create TxInfo for {} in block {}: {}",
-                        tx.txid(),
+                        tx.compute_txid(),
                         height,
                         e
                     );
@@ -234,7 +234,8 @@ impl TxStats {
     ) -> TxStats {
         let mut s = TxStats::default();
 
-        let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid()).collect();
+        let txids_in_this_block: HashSet<Txid> =
+            block.txdata.iter().map(|tx| tx.compute_txid()).collect();
 
         s.height = height;
         s.date = date;
@@ -518,7 +519,8 @@ impl InputStats {
         date: String,
         tx_infos: &Vec<TxInfo>,
     ) -> InputStats {
-        let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid()).collect();
+        let txids_in_this_block: HashSet<Txid> =
+            block.txdata.iter().map(|tx| tx.compute_txid()).collect();
 
         let mut s = InputStats::default();
         s.height = height;
