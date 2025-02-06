@@ -180,7 +180,7 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
     // to the `calc-stats` task
     let get_blocks_task = thread::spawn(move || -> Result<(), MainError> {
         for height in std::cmp::max(db_height - 10, 0)..std::cmp::max((rest_height - 6) as i64, 0) {
-            debug!("getting block height {}", height);
+            debug!("get-blocks: getting block at height {}", height);
             let block = match client.block_at_height(height as u64) {
                 Ok(block) => block,
                 Err(e) => {
@@ -206,8 +206,7 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
     // task
     let calc_stats_task = thread::spawn(move || -> Result<(), MainError> {
         while let Ok((height, block)) = block_receiver.recv() {
-            debug!("calculating stats for block at height {}..", height);
-
+            debug!("calc-stats: processing block at height {}..", height);
             let stat_sender_clone = stat_sender.clone();
             rayon::spawn(move || {
                 let stats_result = Stats::from_block_and_height(block, height);
@@ -216,7 +215,7 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
                         "Could not calculate stats for block at height {}: {}",
                         height, e
                     );
-                    // We can't continue here and probably need to fix somehting
+                    // We can't continue here and probably need to fix something
                     // in rawtx_rs..
                     panic!(
                         "Could not process block {}: {}",
@@ -230,9 +229,14 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
                         "during sending stats at height {} to db writer: stats receiver dropped: {}",
                         height, e
                     );
+                } else {
+                    debug!("calc-stats: processed block at height {} (block_receiver is now closed)", height);
                 }
             });
         }
+        // Reaching this point doesn't mean we're done processing all block just yet
+        // We might still be processing some..
+        debug!("calc-stats: received all blocks and started processing them..");
         Ok(())
     });
 
@@ -255,7 +259,7 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
                     }
                 },
                 Err(e) => {
-                    error!("db writer could not receive stat: {}", e);
+                    info!("batch-insert: the calc-stats task finished ({})", e);
                     break;
                 }
             };
@@ -279,7 +283,7 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
         // once the stat_receiver is closed, insert the remaining buffer
         // contents into the database
         info!(
-            "writing a batch of {} block-stats to database for shutdown",
+            "collect-statistics: writing the final batch of {} block-stats to database",
             stat_buffer.len()
         );
         db::insert_stats(connection, &stat_buffer)?;
@@ -288,13 +292,13 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
 
     get_blocks_task
         .join()
-        .expect("The get_blocks_task thread panicked")?;
+        .expect("The get-blocks task thread panicked")?;
     calc_stats_task
         .join()
-        .expect("The calc_stats_task thread panicked")?;
+        .expect("The calc-stats task thread panicked")?;
     batch_insert_task
         .join()
-        .expect("The batch_insert_task thread panicked")?;
+        .expect("The batch-insert task thread panicked")?;
 
     Ok(())
 }
