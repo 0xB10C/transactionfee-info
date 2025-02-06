@@ -21,6 +21,7 @@ diesel::table! {
         payments_signaling_explicit_rbf -> Integer,
         inputs -> Integer,
         outputs -> Integer,
+        pool_id -> Integer,
     }
 }
 

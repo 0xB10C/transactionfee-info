@@ -1,10 +1,13 @@
+use bitcoin_pool_identification::{default_data, Pool, PoolIdentification};
 use chrono::DateTime;
 use diesel::prelude::*;
-use log::error;
-use rawtx_rs::bitcoin::{Block, Transaction, Txid};
+use log::{debug, error};
+use rawtx_rs::bitcoin::{Block, Network, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
 use std::collections::HashSet;
 use std::{error, fmt};
+
+const UNKNOW_POOL_ID: i32 = 0;
 
 #[derive(Debug, Clone)]
 pub enum StatsError {
@@ -64,8 +67,19 @@ impl Stats {
             }
         }
 
+        // TODO: if we ever wanted to generate stats on a network other than
+        // mainnet and do pool identification, we'd need to be able to change
+        // the network here.
+        let pools = default_data(Network::Bitcoin);
+
         Ok(Stats {
-            block: BlockStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
+            block: BlockStats::from_block_and_height(
+                &block,
+                height,
+                date.clone(),
+                &tx_infos,
+                &pools,
+            ),
             tx: TxStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
             input: InputStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
             output: OutputStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
@@ -117,6 +131,9 @@ pub struct BlockStats {
     pub inputs: i32,
     /// number of outputs created in this block
     pub outputs: i32,
+    /// the pool id, if the pool could be identified. If the pool is unknown,
+    /// the id will be 0. See the IDs in https://github.com/bitcoin-data/mining-pools/blob/generated/pool-list.json
+    pub pool_id: i32,
 }
 
 impl BlockStats {
@@ -125,13 +142,30 @@ impl BlockStats {
         height: i64,
         date: String,
         tx_infos: &Vec<TxInfo>,
+        pools: &[Pool],
     ) -> BlockStats {
+        let pool_id: i32 = match block.identify_pool(Network::Bitcoin, &pools) {
+            Some(result) => {
+                debug!(
+                    "Identified pool '{}' at height {} with method '{:?}'",
+                    result.pool.name, height, result.identification_method
+                );
+                result.pool.id as i32
+            }
+            None => {
+                debug!("Could not identify pool at height {}", height);
+                UNKNOW_POOL_ID
+            }
+        };
+
         BlockStats {
             height: height,
             date: date.to_string(),
             version: block.header.version.to_consensus(),
             nonce: block.header.nonce as i32,
             bits: block.header.bits.to_consensus() as i32,
+
+            pool_id,
 
             size: block.total_size() as i64,
             stripped_size: block
@@ -761,6 +795,10 @@ mod tests {
         // an earlier version skipped the coinbase transaction
         assert_eq!(stats.input.inputs_witness_coinbase, 1);
 
+        // This block was mined by Binance Pool which has the ID 123
+        // https://github.com/bitcoin-data/mining-pools/blob/7eb988330043456189ba6d01fd32811a1f234f2a/pool-list.json#L1330C11-L1330C14
+        assert_eq!(stats.block.pool_id, 123);
+
         // TODO: extend coverage
     }
 
@@ -782,6 +820,10 @@ mod tests {
 
         // an earlier version skipped the coinbase transaction
         assert_eq!(stats.input.inputs_coinbase, 1);
+
+        // This block was mined by MegaBigPower which has the ID 39
+        // https://github.com/bitcoin-data/mining-pools/blob/7eb988330043456189ba6d01fd32811a1f234f2a/pool-list.json#L388-L401
+        assert_eq!(stats.block.pool_id, 39);
 
         // TODO: extend coverage
     }
