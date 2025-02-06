@@ -20,7 +20,8 @@ const METRIC_TABLES: [&str; 5] = [
     "input_stats",
     "output_stats",
 ];
-const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 5] = ["height", "date", "version", "nonce", "bits"];
+const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 6] =
+    ["height", "date", "version", "nonce", "bits", "pool_id"];
 const DEFAULT_LOG_LEVEL: &str = "info";
 const DATABASE_BATCH_SIZE: usize = 100;
 
