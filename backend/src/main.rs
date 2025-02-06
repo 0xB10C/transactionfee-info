@@ -25,6 +25,10 @@ const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 6] =
 const DEFAULT_LOG_LEVEL: &str = "info";
 const DATABASE_BATCH_SIZE: usize = 100;
 
+// Don't fetch (and process) the most recent blocks to be safe
+// in-case of a reorg.
+const REORG_SAFETY_MARGIN: u64 = 6;
+
 #[derive(Debug)]
 pub enum MainError {
     DB(diesel::result::Error),
@@ -179,7 +183,9 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
     // gets blocks from the Bitcoin Core REST interface and sends them onwards
     // to the `calc-stats` task
     let get_blocks_task = thread::spawn(move || -> Result<(), MainError> {
-        for height in std::cmp::max(db_height - 10, 0)..std::cmp::max((rest_height - 6) as i64, 0) {
+        for height in std::cmp::max(db_height + 1, 0)
+            ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0)
+        {
             debug!("get-blocks: getting block at height {}", height);
             let block = match client.block_at_height(height as u64) {
                 Ok(block) => block,
@@ -230,7 +236,10 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
                         height, e
                     );
                 } else {
-                    debug!("calc-stats: processed block at height {} (block_receiver is now closed)", height);
+                    debug!(
+                        "calc-stats: processed block at height {} (block_receiver is now closed)",
+                        height
+                    );
                 }
             });
         }
@@ -280,13 +289,21 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
             }
         }
 
-        // once the stat_receiver is closed, insert the remaining buffer
-        // contents into the database
+        if stat_buffer.len() > 0 {
+            // once the stat_receiver is closed, insert the remaining buffer
+            // contents into the database
+            info!(
+                "collect-statistics: writing the final batch of {} block-stats to database",
+                stat_buffer.len()
+            );
+            db::insert_stats(connection, &stat_buffer)?;
+        } else {
+            info!("collect-statistics: no new blocks to insert.");
+        }
         info!(
-            "collect-statistics: writing the final batch of {} block-stats to database",
-            stat_buffer.len()
+            "collect-statistics: database is at height {} with a reorg-safety margin of {}",
+            db_height, REORG_SAFETY_MARGIN,
         );
-        db::insert_stats(connection, &stat_buffer)?;
         Ok(())
     });
 
