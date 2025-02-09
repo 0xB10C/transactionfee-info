@@ -199,8 +199,8 @@ pub fn collect_statistics(
             debug!("calc-stats: processing block at height {}..", height);
             let stat_sender_clone = stat_sender.clone();
             rayon::spawn(move || {
-                let stats_result = Stats::from_block_and_height(block, height);
-                if let Err(e) = stats_result.clone() {
+                let stats_result = Stats::from_block(block);
+                if let Err(e) = stats_result {
                     error!(
                         "Could not calculate stats for block at height {}: {}",
                         height, e

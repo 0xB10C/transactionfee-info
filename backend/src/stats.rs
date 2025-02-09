@@ -1,23 +1,28 @@
+use bitcoin::{Network, Transaction, Txid};
 use bitcoin_pool_identification::{default_data, Pool, PoolIdentification};
 use chrono::DateTime;
 use diesel::prelude::*;
 use log::{debug, error};
-use rawtx_rs::bitcoin::{Block, Network, Transaction, Txid};
 use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
-use std::collections::HashSet;
-use std::{error, fmt};
+use std::{collections::HashSet, error, fmt, num::ParseIntError};
 
-const UNKNOW_POOL_ID: i32 = 0;
+use crate::rest::{Block, InputData, ScriptPubkeyType};
 
-#[derive(Debug, Clone)]
+const UNKNOWN_POOL_ID: i32 = 0;
+
+#[derive(Debug)]
 pub enum StatsError {
     TxInfoError(rawtx_rs::tx::TxInfoError),
+    BitcoinEncodeError(bitcoin::consensus::encode::Error),
+    ParseIntError(ParseIntError),
 }
 
 impl fmt::Display for StatsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             StatsError::TxInfoError(e) => write!(f, "Bitcoin Script Error: {:?}", e),
+            StatsError::BitcoinEncodeError(e) => write!(f, "Bitcoin Encode Error: {:?}", e),
+            StatsError::ParseIntError(e) => write!(f, "Parse Int Error: {:?}", e),
         }
     }
 }
@@ -26,6 +31,8 @@ impl error::Error for StatsError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             StatsError::TxInfoError(ref e) => Some(e),
+            StatsError::BitcoinEncodeError(ref e) => Some(e),
+            StatsError::ParseIntError(ref e) => Some(e),
         }
     }
 }
@@ -33,6 +40,18 @@ impl error::Error for StatsError {
 impl From<rawtx_rs::tx::TxInfoError> for StatsError {
     fn from(e: rawtx_rs::tx::TxInfoError) -> Self {
         StatsError::TxInfoError(e)
+    }
+}
+
+impl From<bitcoin::consensus::encode::Error> for StatsError {
+    fn from(e: bitcoin::consensus::encode::Error) -> Self {
+        StatsError::BitcoinEncodeError(e)
+    }
+}
+
+impl From<ParseIntError> for StatsError {
+    fn from(e: ParseIntError) -> Self {
+        StatsError::ParseIntError(e)
     }
 }
 
@@ -47,19 +66,20 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub fn from_block_and_height(block: Block, height: i64) -> Result<Stats, StatsError> {
-        let timestamp = DateTime::from_timestamp(block.header.time as i64, 0)
-            .expect("invalid block header timestamp");
+    pub fn from_block(block: Block) -> Result<Stats, StatsError> {
+        let timestamp =
+            DateTime::from_timestamp(block.time as i64, 0).expect("invalid block header timestamp");
         let date = timestamp.format("%Y-%m-%d").to_string();
         let mut tx_infos: Vec<TxInfo> = Vec::with_capacity(block.txdata.len());
         for tx in block.txdata.iter() {
-            match TxInfo::new(tx) {
+            let tx: Transaction = bitcoin::consensus::deserialize(&tx.raw)?;
+            match TxInfo::new(&tx) {
                 Ok(txinfo) => tx_infos.push(txinfo),
                 Err(e) => {
                     error!(
                         "Could not create TxInfo for {} in block {}: {}",
                         tx.compute_txid(),
-                        height,
+                        block.height,
                         e
                     );
                     return Err(StatsError::TxInfoError(e));
@@ -73,17 +93,11 @@ impl Stats {
         let pools = default_data(Network::Bitcoin);
 
         Ok(Stats {
-            block: BlockStats::from_block_and_height(
-                &block,
-                height,
-                date.clone(),
-                &tx_infos,
-                &pools,
-            ),
-            tx: TxStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
-            input: InputStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
-            output: OutputStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
-            script: ScriptStats::from_block_and_height(&block, height, date.clone(), &tx_infos),
+            block: BlockStats::from_block(&block, date.clone(), &tx_infos, &pools)?,
+            tx: TxStats::from_block(&block, date.clone(), &tx_infos),
+            input: InputStats::from_block(&block, date.clone(), &tx_infos),
+            output: OutputStats::from_block(&block, date.clone(), &tx_infos),
+            script: ScriptStats::from_block(&block, date.clone(), &tx_infos),
         })
     }
 }
@@ -137,14 +151,21 @@ pub struct BlockStats {
 }
 
 impl BlockStats {
-    pub fn from_block_and_height(
+    pub fn from_block(
         block: &Block,
-        height: i64,
         date: String,
         tx_infos: &Vec<TxInfo>,
         pools: &[Pool],
-    ) -> BlockStats {
-        let pool_id: i32 = match block.identify_pool(Network::Bitcoin, &pools) {
+    ) -> Result<BlockStats, StatsError> {
+        let height = block.height;
+        let coinbase_tx: Transaction = bitcoin::consensus::deserialize(
+            &block
+                .txdata
+                .first()
+                .expect("block should have a coinbase tx")
+                .raw,
+        )?;
+        let pool_id: i32 = match coinbase_tx.identify_pool(Network::Bitcoin, &pools) {
             Some(result) => {
                 debug!(
                     "Identified pool '{}' at height {} with method '{:?}'",
@@ -154,40 +175,23 @@ impl BlockStats {
             }
             None => {
                 debug!("Could not identify pool at height {}", height);
-                UNKNOW_POOL_ID
+                UNKNOWN_POOL_ID
             }
         };
 
-        // size of the varint between the header and the first transaction
-        let txcount_varint_size: usize = match block.txdata.len() {
-            0..=0xFC => 1,
-            0xFD..=0xFFFF => 3,
-            0x10000..=0xFFFFFFFF => 5, // up to 4,294,967,295 transactions..
-            _ => panic!("transaction count out of range: {}", block.txdata.len()),
-        };
-
-        BlockStats {
+        Ok(BlockStats {
             height: height,
             date: date.to_string(),
-            version: block.header.version.to_consensus(),
-            nonce: block.header.nonce as i32,
-            bits: block.header.bits.to_consensus() as i32,
+            version: block.version.to_consensus(),
+            nonce: block.nonce as i32,
+            bits: i32::from_str_radix(&block.bits, 16)?,
 
             pool_id,
 
-            size: block.total_size() as i64,
-            // The stripped block size includes the header and
-            // txcount varint size along with the transaction
-            // base_size
-            stripped_size: (block
-                .txdata
-                .iter()
-                .map(Transaction::base_size)
-                .sum::<usize>()
-                + 80
-                + txcount_varint_size) as i64,
-            vsize: block.txdata.iter().map(Transaction::vsize).sum::<usize>() as i64,
-            weight: block.weight().to_wu() as i64,
+            size: block.size,
+            stripped_size: block.stripped_size,
+            vsize: block.txdata.iter().map(|x| x.vsize).sum::<u32>() as i64,
+            weight: block.weight.to_wu() as i64,
             empty: block.txdata.len() == 1,
 
             coinbase_output_amount: block
@@ -202,7 +206,7 @@ impl BlockStats {
                 .txdata
                 .first()
                 .expect("block should have a coinbase tx")
-                .weight()
+                .weight
                 .to_wu() as i64,
 
             transactions: block.txdata.len() as i32,
@@ -225,7 +229,7 @@ impl BlockStats {
 
             inputs: block.txdata.iter().map(|tx| tx.input.len()).sum::<usize>() as i32,
             outputs: block.txdata.iter().map(|tx| tx.output.len()).sum::<usize>() as i32,
-        }
+        })
     }
 }
 
@@ -273,16 +277,11 @@ pub struct TxStats {
 }
 
 impl TxStats {
-    pub fn from_block_and_height(
-        block: &Block,
-        height: i64,
-        date: String,
-        tx_infos: &Vec<TxInfo>,
-    ) -> TxStats {
+    pub fn from_block(block: &Block, date: String, tx_infos: &Vec<TxInfo>) -> TxStats {
+        let height = block.height;
         let mut s = TxStats::default();
 
-        let txids_in_this_block: HashSet<Txid> =
-            block.txdata.iter().map(|tx| tx.compute_txid()).collect();
+        let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid).collect();
 
         s.height = height;
         s.date = date;
@@ -343,11 +342,12 @@ impl TxStats {
                 s.tx_1_output += 1;
             }
 
-            if tx
-                .input
-                .iter()
-                .any(|i| txids_in_this_block.contains(&i.previous_output.txid))
-            {
+            if tx.input.iter().any(|i| {
+                if let InputData::NonCoinbase { txid, .. } = &i.data {
+                    return txids_in_this_block.contains(txid);
+                }
+                false
+            }) {
                 s.tx_spending_newly_created_utxos += 1;
             }
 
@@ -418,12 +418,8 @@ pub struct ScriptStats {
 }
 
 impl ScriptStats {
-    pub fn from_block_and_height(
-        block: &Block,
-        height: i64,
-        date: String,
-        tx_infos: &Vec<TxInfo>,
-    ) -> ScriptStats {
+    pub fn from_block(block: &Block, date: String, tx_infos: &Vec<TxInfo>) -> ScriptStats {
+        let height = block.height;
         let mut s = ScriptStats::default();
 
         s.height = height;
@@ -560,14 +556,9 @@ pub struct InputStats {
 }
 
 impl InputStats {
-    pub fn from_block_and_height(
-        block: &Block,
-        height: i64,
-        date: String,
-        tx_infos: &Vec<TxInfo>,
-    ) -> InputStats {
-        let txids_in_this_block: HashSet<Txid> =
-            block.txdata.iter().map(|tx| tx.compute_txid()).collect();
+    pub fn from_block(block: &Block, date: String, tx_infos: &Vec<TxInfo>) -> InputStats {
+        let height = block.height;
+        let txids_in_this_block: HashSet<Txid> = block.txdata.iter().map(|tx| tx.txid).collect();
 
         let mut s = InputStats::default();
         s.height = height;
@@ -619,7 +610,10 @@ impl InputStats {
                 }
             }
             for input in tx.input.iter() {
-                if txids_in_this_block.contains(&input.previous_output.txid) {
+                let InputData::NonCoinbase { txid, prevout, .. } = &input.data else {
+                    continue;
+                };
+                if txids_in_this_block.contains(txid) {
                     s.inputs_spend_in_same_block += 1;
                 }
             }
@@ -660,12 +654,8 @@ pub struct OutputStats {
 }
 
 impl OutputStats {
-    pub fn from_block_and_height(
-        block: &Block,
-        height: i64,
-        date: String,
-        tx_infos: &Vec<TxInfo>,
-    ) -> OutputStats {
+    pub fn from_block(block: &Block, date: String, tx_infos: &Vec<TxInfo>) -> OutputStats {
+        let height = block.height;
         let mut s = OutputStats::default();
 
         s.height = height;
@@ -783,12 +773,12 @@ pub struct FeerateStats {
 
 #[cfg(test)]
 mod tests {
+    use crate::rest::Block;
     use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, TxStats};
     use crate::Stats;
-    use rawtx_rs::bitcoin;
+    use serde::Deserialize;
     use std::fs::File;
     use std::io::BufReader;
-    use std::io::Read;
 
     // helper to make diffs in large Stats structs better visible
     fn diff_stats(got: &Stats, expected: &Stats) {
@@ -809,17 +799,10 @@ mod tests {
 
     #[test]
     fn test_block_739990() {
-        // converted from 739990.hex with xxd -r -p 739990.hex > 739990.bin
-        let mut buffer = BufReader::new(File::open("./testdata/739990.bin").unwrap());
-        const CAPACITY_FOR_739990: usize = 536844;
-        let mut block_bytes: Vec<u8> = Vec::with_capacity(CAPACITY_FOR_739990);
-        let bytes_read = buffer.read_to_end(&mut block_bytes);
-        // to keep the capacity up-to-date and copy & paste proof
-        assert_eq!(bytes_read.unwrap(), CAPACITY_FOR_739990);
-        let block: bitcoin::Block =
-            bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
-        let stats =
-            Stats::from_block_and_height(block, 739990).expect("testdata blocks should not error");
+        let buffer = BufReader::new(File::open("./testdata/739990.json").unwrap());
+        let mut de = serde_json::Deserializer::from_reader(buffer);
+        let block = Block::deserialize(&mut de).expect("test block json to be valid");
+        let stats = Stats::from_block(block).expect("testdata blocks should not error");
 
         let expected_stats = Stats {
             block: BlockStats {
@@ -972,17 +955,10 @@ mod tests {
 
     #[test]
     fn test_block_361582() {
-        // converted from 361582.hex with xxd -r -p 361582.hex > 361582.bin
-        let mut buffer = BufReader::new(File::open("./testdata/361582.bin").unwrap());
-        const CAPACITY_FOR_361582: usize = 163491;
-        let mut block_bytes: Vec<u8> = Vec::with_capacity(CAPACITY_FOR_361582);
-        let bytes_read = buffer.read_to_end(&mut block_bytes);
-        // to keep the capacity up-to-date and copy & paste proof
-        assert_eq!(bytes_read.unwrap(), CAPACITY_FOR_361582);
-        let block: bitcoin::Block =
-            bitcoin::consensus::deserialize(&block_bytes).expect("testdata block should be valid");
-        let stats =
-            Stats::from_block_and_height(block, 361582).expect("testdata blocks should not error");
+        let buffer = BufReader::new(File::open("./testdata/361582.json").unwrap());
+        let mut de = serde_json::Deserializer::from_reader(buffer);
+        let block = Block::deserialize(&mut de).expect("test block json to be valid");
+        let stats = Stats::from_block(block).expect("testdata blocks should not error");
 
         let expected_stats = Stats {
             block: BlockStats {
