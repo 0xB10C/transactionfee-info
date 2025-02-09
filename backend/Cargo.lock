@@ -1160,6 +1160,7 @@ dependencies = [
 name = "transactionfee-info-backend"
 version = "0.1.0"
 dependencies = [
+ "bitcoin",
  "bitcoin-pool-identification",
  "chrono",
  "clap",
@@ -1173,6 +1174,7 @@ dependencies = [
  "rawtx-rs",
  "rayon",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
