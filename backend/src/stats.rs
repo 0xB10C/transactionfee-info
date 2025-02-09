@@ -605,8 +605,7 @@ impl InputStats {
                     InputType::CoinbaseWitness => s.inputs_witness_coinbase += 1,
                     InputType::P2trkp => s.inputs_p2tr_keypath += 1,
                     InputType::P2trsp => s.inputs_p2tr_scriptpath += 1,
-                    InputType::P2a => s.inputs_p2a += 1,
-                    InputType::Unknown => s.inputs_unknown += 1,
+                    InputType::Unknown | InputType::P2a => s.inputs_unknown += 1,
                 }
             }
             for input in tx.input.iter() {
@@ -615,6 +614,11 @@ impl InputStats {
                 };
                 if txids_in_this_block.contains(txid) {
                     s.inputs_spend_in_same_block += 1;
+                }
+
+                if matches!(prevout.script_pub_key.type_, ScriptPubkeyType::Anchor) {
+                    s.inputs_p2a += 1;
+                    s.inputs_unknown -= 1;
                 }
             }
         }
