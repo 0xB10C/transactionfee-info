@@ -287,7 +287,7 @@ impl TxStats {
         s.date = date;
 
         for (tx, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
-            match tx.version.0 {
+            match tx.version {
                 1 => s.tx_version_1 += 1,
                 2 => s.tx_version_2 += 1,
                 3 => s.tx_version_3 += 1,

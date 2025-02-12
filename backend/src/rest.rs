@@ -1,6 +1,6 @@
 use bitcoin::{
-    self, absolute::LockTime, address::NetworkUnchecked, block, transaction, Address, Amount,
-    BlockHash, ScriptBuf, Sequence, TxMerkleNode, Weight, Witness,
+    self, absolute::LockTime, address::NetworkUnchecked, block, Address, Amount, BlockHash,
+    ScriptBuf, Sequence, TxMerkleNode, Weight, Witness,
 };
 use minreq;
 use serde::Deserialize;
@@ -20,10 +20,10 @@ pub struct ChainInfo {
 
 pub mod serde_hex {
     use bitcoin::hex::FromHex;
-    use serde::{de::Error, Deserializer};
+    use serde::{de::Error, Deserialize, Deserializer};
 
     pub fn deserialize<'de, D: Deserializer<'de>, T: FromHex>(d: D) -> Result<T, D::Error> {
-        let hex_str: String = ::serde::Deserialize::deserialize(d)?;
+        let hex_str: String = Deserialize::deserialize(d)?;
         Ok(T::from_hex(&hex_str).map_err(D::Error::custom)?)
     }
 }
@@ -73,9 +73,8 @@ pub struct Prevout {
 }
 
 #[derive(Deserialize)]
-#[serde(rename_all = "lowercase")]
 pub enum InputData {
-    #[serde(with = "serde_hex")]
+    #[serde(rename = "coinbase", with = "serde_hex")]
     Coinbase(Vec<u8>),
     #[serde(untagged, rename_all = "camelCase")]
     NonCoinbase {
@@ -113,7 +112,7 @@ pub struct Transaction {
     pub size: u32,
     pub vsize: u32,
     pub weight: Weight,
-    pub version: transaction::Version,
+    pub version: u32,
     #[serde(default, with = "bitcoin::amount::serde::as_btc::opt")]
     pub fee: Option<Amount>,
     #[serde(rename = "locktime")]
