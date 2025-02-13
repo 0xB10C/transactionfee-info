@@ -158,6 +158,14 @@ impl BlockStats {
             }
         };
 
+        // size of the varint between the header and the first transaction
+        let txcount_varint_size: usize = match block.txdata.len() {
+            0..=0xFC => 1,
+            0xFD..=0xFFFF => 3,
+            0x10000..=0xFFFFFFFF => 5, // up to 4,294,967,295 transactions..
+            _ => panic!("transaction count out of range: {}", block.txdata.len()),
+        };
+
         BlockStats {
             height: height,
             date: date.to_string(),
@@ -168,11 +176,16 @@ impl BlockStats {
             pool_id,
 
             size: block.total_size() as i64,
-            stripped_size: block
+            // The stripped block size includes the header and
+            // txcount varint size along with the transaction
+            // base_size
+            stripped_size: (block
                 .txdata
                 .iter()
                 .map(Transaction::base_size)
-                .sum::<usize>() as i64,
+                .sum::<usize>()
+                + 80
+                + txcount_varint_size) as i64,
             vsize: block.txdata.iter().map(Transaction::vsize).sum::<usize>() as i64,
             weight: block.weight().to_wu() as i64,
             empty: block.txdata.len() == 1,
@@ -816,7 +829,7 @@ mod tests {
                 nonce: 0x33ca7510,
                 bits: 0x17094b6a,
                 size: 536844,
-                stripped_size: 225452,
+                stripped_size: 225535,
                 vsize: 303595,
                 weight: 1213449,
                 empty: false,
@@ -979,7 +992,7 @@ mod tests {
                 nonce: 0x444386f8,
                 bits: 0x18162043,
                 size: 163491,
-                stripped_size: 163408,
+                stripped_size: 163491,
                 vsize: 163408,
                 weight: 653964,
                 empty: false,
