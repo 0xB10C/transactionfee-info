@@ -176,42 +176,62 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
     }
     let rest_height = chain_info.blocks;
 
-    let (block_sender, block_receiver) = mpsc::sync_channel(10);
+    let (block_sender, mut block_receiver) = tokio::sync::mpsc::channel(32);
     let (stat_sender, stat_receiver) = mpsc::sync_channel(100);
 
     // get-blocks task
     // gets blocks from the Bitcoin Core REST interface and sends them onwards
     // to the `calc-stats` task
     let get_blocks_task = thread::spawn(move || -> Result<(), MainError> {
-        for height in std::cmp::max(db_height + 1, 0)
-            ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0)
-        {
-            debug!("get-blocks: getting block at height {}", height);
-            let block = match client.block_at_height(height as u64) {
-                Ok(block) => block,
-                Err(e) => {
-                    error!("Could not get block at height {}: {}", height, e);
-                    return Err(MainError::REST(e));
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let mut futs = vec![];
+                for height in std::cmp::max(db_height + 1, 0)
+                    ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0)
+                {
+                    let client = client.clone();
+                    let fut = async move {
+                        debug!("get-blocks: getting block at height {height}");
+                        let block = match client.block_at_height(height as u64).await {
+                            Ok(block) => block,
+                            Err(e) => {
+                                error!("Could not get block at height {}: {}", height, e);
+                                return Err(MainError::REST(e));
+                            }
+                        };
+
+                        Ok(block)
+                    };
+
+                    futs.push(fut);
+                    if futs.len() > 15 || height >= (rest_height - REORG_SAFETY_MARGIN) as i64 {
+                        let blocks = futures::future::try_join_all(futs).await?;
+                        for block in blocks {
+                            if let Err(_) = block_sender.send(block).await {
+                                warn!(
+                            "during sending block at height {height} to stats generator: block receiver dropped");
+                                // We can return OK here. When the receiver is dropped, there
+                                // probably was an error in the calc-stats task.
+                                return Err(MainError::IBDNotDone);
+                            }
+                        }
+                        futs = vec![];
+                    }
                 }
-            };
-            if let Err(_) = block_sender.send((height as i64, block)) {
-                warn!(
-                    "during sending block at height {} to stats generator: block receiver dropped",
-                    height
-                );
-                // We can return OK here. When the receiver is dropped, there
-                // probably was an error in the calc-stats task.
-                return Ok(());
-            }
-        }
-        Ok(())
+
+                Ok(())
+            })
     });
 
     // calc-stats task
     // calculates the per block stats and sends them onwards to the batch-insert
     // task
     let calc_stats_task = thread::spawn(move || -> Result<(), MainError> {
-        while let Ok((height, block)) = block_receiver.recv() {
+        while let Some(block) = block_receiver.blocking_recv() {
+            let height = block.height;
             debug!("calc-stats: processing block at height {}..", height);
             let stat_sender_clone = stat_sender.clone();
             rayon::spawn(move || {
