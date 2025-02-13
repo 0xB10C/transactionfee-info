@@ -36,7 +36,7 @@ impl From<rawtx_rs::tx::TxInfoError> for StatsError {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Stats {
     pub block: BlockStats,
     pub tx: TxStats,
@@ -88,7 +88,7 @@ impl Stats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Debug)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Debug, PartialEq)]
 #[diesel(table_name = crate::schema::block_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -216,7 +216,7 @@ impl BlockStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug, PartialEq)]
 #[diesel(table_name = crate::schema::tx_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -357,7 +357,7 @@ impl TxStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug, PartialEq)]
 #[diesel(table_name = crate::schema::script_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -509,7 +509,7 @@ impl ScriptStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug, PartialEq)]
 #[diesel(table_name = crate::schema::input_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -615,7 +615,7 @@ impl InputStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Default, Debug, PartialEq)]
 #[diesel(table_name = crate::schema::output_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -708,7 +708,7 @@ impl OutputStats {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Debug)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Clone, Debug, PartialEq)]
 #[diesel(table_name = crate::schema::feerate_stats)]
 #[diesel(primary_key(height))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -770,11 +770,29 @@ pub struct FeerateStats {
 
 #[cfg(test)]
 mod tests {
+    use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, TxStats};
     use crate::Stats;
     use rawtx_rs::bitcoin;
     use std::fs::File;
     use std::io::BufReader;
     use std::io::Read;
+
+    // helper to make diffs in large Stats structs better visible
+    fn diff_stats(got: &Stats, expected: &Stats) {
+        let got_str = format!("{:#?}", got);
+        let expected_str = format!("{:#?}", expected);
+        assert_eq!(got_str.lines().count(), expected_str.lines().count());
+        for (got_line, expected_line) in got_str.lines().zip(expected_str.lines()) {
+            if got_line != expected_line {
+                println!("Mismatch ⚠️");
+                println!("Got:      {}", got_line);
+                println!("Expected: {}", expected_line);
+            }
+        }
+    }
+
+    // TODO: additional test cases for blocks with taproot transactions
+    // and P2A in & outputs
 
     #[test]
     fn test_block_739990() {
@@ -790,16 +808,153 @@ mod tests {
         let stats =
             Stats::from_block_and_height(block, 739990).expect("testdata blocks should not error");
 
-        assert_eq!(stats.block.transactions, 645);
+        let expected_stats = Stats {
+            block: BlockStats {
+                height: 739990,
+                date: "2022-06-09".to_string(),
+                version: 0x20000000,
+                nonce: 0x33ca7510,
+                bits: 0x17094b6a,
+                size: 536844,
+                stripped_size: 225452,
+                vsize: 303595,
+                weight: 1213449,
+                empty: false,
+                coinbase_output_amount: 626983001,
+                coinbase_weight: 1272,
+                transactions: 645,
+                payments: 1882,
+                payments_segwit_spending_tx: 1720,
+                payments_taproot_spending_tx: 2,
+                payments_signaling_explicit_rbf: 457,
+                inputs: 2170,
+                outputs: 1882,
+                // This block was mined by Binance Pool which has the ID 123
+                // https://github.com/bitcoin-data/mining-pools/blob/7eb988330043456189ba6d01fd32811a1f234f2a/pool-list.json#L1330C11-L1330C14
+                pool_id: 123,
+            },
+            tx: TxStats {
+                height: 739990,
+                date: "2022-06-09".to_string(),
+                tx_version_1: 271,
+                tx_version_2: 374,
+                tx_version_3: 0,
+                tx_version_unknown: 0,
+                tx_output_amount: 125054585129,
+                tx_spending_segwit: 562,
+                tx_spending_only_segwit: 553,
+                tx_spending_only_legacy: 82,
+                tx_spending_only_taproot: 1,
+                tx_spending_segwit_and_legacy: 9,
+                tx_spending_nested_segwit: 126,
+                tx_spending_native_segwit: 443,
+                tx_spending_taproot: 1,
+                tx_bip69_compliant: 391,
+                tx_signaling_explicit_rbf: 210,
+                tx_1_input: 499,
+                tx_1_output: 177,
+                tx_1_input_1_output: 112,
+                tx_1_input_2_output: 339,
+                tx_spending_newly_created_utxos: 110,
+                tx_timelock_height: 209,
+                tx_timelock_timestamp: 0,
+                tx_timelock_not_enforced: 187,
+                tx_timelock_too_high: 0,
+            },
+            input: InputStats {
+                height: 739990,
+                date: "2022-06-09".to_string(),
+                inputs_spending_legacy: 239,
+                inputs_spending_segwit: 1930,
+                inputs_spending_taproot: 1,
+                inputs_spending_nested_segwit: 1327,
+                inputs_spending_native_segwit: 603,
+                inputs_spending_multisig: 738,
+                inputs_spending_p2ms_multisig: 0,
+                inputs_spending_p2sh_multisig: 28,
+                inputs_spending_nested_p2wsh_multisig: 672,
+                inputs_spending_p2wsh_multisig: 38,
+                inputs_p2pk: 0,
+                inputs_p2pkh: 211,
+                inputs_nested_p2wpkh: 654,
+                inputs_p2wpkh: 557,
+                inputs_p2ms: 0,
+                inputs_p2sh: 28,
+                inputs_nested_p2wsh: 673,
+                inputs_p2wsh: 45,
+                inputs_coinbase: 0,
+                inputs_witness_coinbase: 1,
+                inputs_p2tr_keypath: 1,
+                inputs_p2tr_scriptpath: 0,
+                inputs_p2a: 0,
+                inputs_unknown: 0,
+                inputs_spend_in_same_block: 110,
+            },
+            output: OutputStats {
+                height: 739990,
+                date: "2022-06-09".to_string(),
+                outputs_p2pk: 0,
+                outputs_p2pkh: 332,
+                outputs_p2wpkh: 652,
+                outputs_p2ms: 0,
+                outputs_p2sh: 802,
+                outputs_p2wsh: 76,
+                outputs_opreturn: 13,
+                outputs_p2tr: 7,
+                outputs_p2a: 0,
+                outputs_unknown: 0,
+                outputs_p2pk_amount: 0,
+                outputs_p2pkh_amount: 33803517254,
+                outputs_p2wpkh_amount: 58286402491,
+                outputs_p2ms_amount: 0,
+                outputs_p2sh_amount: 21310299474,
+                outputs_p2wsh_amount: 11638052422,
+                outputs_p2tr_amount: 16313488,
+                outputs_p2a_amount: 0,
+                outputs_opreturn_amount: 0,
+                outputs_unknown_amount: 0,
+            },
+            script: ScriptStats {
+                height: 739990,
+                date: "2022-06-09".to_string(),
+                pubkeys: 3621,
+                pubkeys_compressed: 3618,
+                pubkeys_uncompressed: 3,
+                pubkeys_compressed_inputs: 3611,
+                pubkeys_uncompressed_inputs: 3,
+                pubkeys_compressed_outputs: 7,
+                pubkeys_uncompressed_outputs: 0,
+                sigs_schnorr: 1,
+                sigs_ecdsa: 2912,
+                sigs_ecdsa_not_strict_der: 0,
+                sigs_ecdsa_strict_der: 2912,
+                sigs_ecdsa_length_less_70byte: 0,
+                sigs_ecdsa_length_70byte: 7,
+                sigs_ecdsa_length_71byte: 2060,
+                sigs_ecdsa_length_72byte: 845,
+                sigs_ecdsa_length_73byte: 0,
+                sigs_ecdsa_length_74byte: 0,
+                sigs_ecdsa_length_75byte_or_more: 0,
+                sigs_ecdsa_low_r: 2066,
+                sigs_ecdsa_high_r: 846,
+                sigs_ecdsa_low_s: 2912,
+                sigs_ecdsa_high_s: 0,
+                sigs_ecdsa_high_rs: 0,
+                sigs_ecdsa_low_rs: 2066,
+                sigs_ecdsa_low_r_high_s: 0,
+                sigs_ecdsa_high_r_low_s: 846,
+                sigs_sighashes: 2912,
+                sigs_sighash_all: 2910,
+                sigs_sighash_none: 0,
+                sigs_sighash_single: 0,
+                sigs_sighash_all_acp: 2,
+                sigs_sighash_none_acp: 0,
+                sigs_sighash_single_acp: 0,
+            },
+        };
 
-        // an earlier version skipped the coinbase transaction
-        assert_eq!(stats.input.inputs_witness_coinbase, 1);
-
-        // This block was mined by Binance Pool which has the ID 123
-        // https://github.com/bitcoin-data/mining-pools/blob/7eb988330043456189ba6d01fd32811a1f234f2a/pool-list.json#L1330C11-L1330C14
-        assert_eq!(stats.block.pool_id, 123);
-
-        // TODO: extend coverage
+        diff_stats(&stats, &expected_stats);
+        assert_eq!(stats, expected_stats, "see diff above");
     }
 
     #[test]
@@ -816,15 +971,152 @@ mod tests {
         let stats =
             Stats::from_block_and_height(block, 361582).expect("testdata blocks should not error");
 
-        assert_eq!(stats.block.transactions, 277);
+        let expected_stats = Stats {
+            block: BlockStats {
+                height: 361582,
+                date: "2015-06-19".to_string(),
+                version: 2,
+                nonce: 0x444386f8,
+                bits: 0x18162043,
+                size: 163491,
+                stripped_size: 163408,
+                vsize: 163408,
+                weight: 653964,
+                empty: false,
+                coinbase_output_amount: 2503687509,
+                coinbase_weight: 408,
+                transactions: 277,
+                payments: 591,
+                payments_segwit_spending_tx: 0,
+                payments_taproot_spending_tx: 0,
+                payments_signaling_explicit_rbf: 0,
+                inputs: 919,
+                outputs: 591,
+                // This block was mined by MegaBigPower which has the ID 39
+                // https://github.com/bitcoin-data/mining-pools/blob/7eb988330043456189ba6d01fd32811a1f234f2a/pool-list.json#L388-L401
+                pool_id: 39,
+            },
+            tx: TxStats {
+                height: 361582,
+                date: "2015-06-19".to_string(),
+                tx_version_1: 277,
+                tx_version_2: 0,
+                tx_version_3: 0,
+                tx_version_unknown: 0,
+                tx_output_amount: 305829530827,
+                tx_spending_segwit: 0,
+                tx_spending_only_segwit: 0,
+                tx_spending_only_legacy: 276,
+                tx_spending_only_taproot: 0,
+                tx_spending_segwit_and_legacy: 0,
+                tx_spending_nested_segwit: 0,
+                tx_spending_native_segwit: 0,
+                tx_spending_taproot: 0,
+                tx_bip69_compliant: 116,
+                tx_signaling_explicit_rbf: 0,
+                tx_1_input: 146,
+                tx_1_output: 31,
+                tx_1_input_1_output: 16,
+                tx_1_input_2_output: 125,
+                tx_spending_newly_created_utxos: 45,
+                tx_timelock_height: 1,
+                tx_timelock_timestamp: 0,
+                tx_timelock_not_enforced: 1,
+                tx_timelock_too_high: 0,
+            },
+            input: InputStats {
+                height: 361582,
+                date: "2015-06-19".to_string(),
+                inputs_spending_legacy: 918,
+                inputs_spending_segwit: 0,
+                inputs_spending_taproot: 0,
+                inputs_spending_nested_segwit: 0,
+                inputs_spending_native_segwit: 0,
+                inputs_spending_multisig: 19,
+                inputs_spending_p2ms_multisig: 0,
+                inputs_spending_p2sh_multisig: 19,
+                inputs_spending_nested_p2wsh_multisig: 0,
+                inputs_spending_p2wsh_multisig: 0,
+                inputs_p2pk: 0,
+                inputs_p2pkh: 898,
+                inputs_nested_p2wpkh: 0,
+                inputs_p2wpkh: 0,
+                inputs_p2ms: 0,
+                inputs_p2sh: 20,
+                inputs_nested_p2wsh: 0,
+                inputs_p2wsh: 0,
+                inputs_coinbase: 1,
+                inputs_witness_coinbase: 0,
+                inputs_p2tr_keypath: 0,
+                inputs_p2tr_scriptpath: 0,
+                inputs_p2a: 0,
+                inputs_unknown: 0,
+                inputs_spend_in_same_block: 52,
+            },
+            output: OutputStats {
+                height: 361582,
+                date: "2015-06-19".to_string(),
+                outputs_p2pk: 0,
+                outputs_p2pkh: 568,
+                outputs_p2wpkh: 0,
+                outputs_p2ms: 0,
+                outputs_p2sh: 23,
+                outputs_p2wsh: 0,
+                outputs_opreturn: 0,
+                outputs_p2tr: 0,
+                outputs_p2a: 0,
+                outputs_unknown: 0,
+                outputs_p2pk_amount: 0,
+                outputs_p2pkh_amount: 240283730043,
+                outputs_p2wpkh_amount: 0,
+                outputs_p2ms_amount: 0,
+                outputs_p2sh_amount: 65545800784,
+                outputs_p2wsh_amount: 0,
+                outputs_p2tr_amount: 0,
+                outputs_p2a_amount: 0,
+                outputs_opreturn_amount: 0,
+                outputs_unknown_amount: 0,
+            },
+            script: ScriptStats {
+                height: 361582,
+                date: "2015-06-19".to_string(),
+                pubkeys: 946,
+                pubkeys_compressed: 860,
+                pubkeys_uncompressed: 86,
+                pubkeys_compressed_inputs: 860,
+                pubkeys_uncompressed_inputs: 86,
+                pubkeys_compressed_outputs: 0,
+                pubkeys_uncompressed_outputs: 0,
+                sigs_schnorr: 0,
+                sigs_ecdsa: 935,
+                sigs_ecdsa_not_strict_der: 0,
+                sigs_ecdsa_strict_der: 935,
+                sigs_ecdsa_length_less_70byte: 0,
+                sigs_ecdsa_length_70byte: 3,
+                sigs_ecdsa_length_71byte: 438,
+                sigs_ecdsa_length_72byte: 451,
+                sigs_ecdsa_length_73byte: 43,
+                sigs_ecdsa_length_74byte: 0,
+                sigs_ecdsa_length_75byte_or_more: 0,
+                sigs_ecdsa_low_r: 470,
+                sigs_ecdsa_high_r: 465,
+                sigs_ecdsa_low_s: 862,
+                sigs_ecdsa_high_s: 73,
+                sigs_ecdsa_high_rs: 43,
+                sigs_ecdsa_low_rs: 440,
+                sigs_ecdsa_low_r_high_s: 30,
+                sigs_ecdsa_high_r_low_s: 422,
+                sigs_sighashes: 935,
+                sigs_sighash_all: 935,
+                sigs_sighash_none: 0,
+                sigs_sighash_single: 0,
+                sigs_sighash_all_acp: 0,
+                sigs_sighash_none_acp: 0,
+                sigs_sighash_single_acp: 0,
+            },
+        };
 
-        // an earlier version skipped the coinbase transaction
-        assert_eq!(stats.input.inputs_coinbase, 1);
-
-        // This block was mined by MegaBigPower which has the ID 39
-        // https://github.com/bitcoin-data/mining-pools/blob/7eb988330043456189ba6d01fd32811a1f234f2a/pool-list.json#L388-L401
-        assert_eq!(stats.block.pool_id, 39);
-
-        // TODO: extend coverage
+        diff_stats(&stats, &expected_stats);
+        assert_eq!(stats, expected_stats, "see diff above");
     }
 }
