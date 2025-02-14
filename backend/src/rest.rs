@@ -6,6 +6,7 @@ use minreq;
 use serde::Deserialize;
 use std::{error, fmt};
 
+#[derive(Clone)]
 pub struct RestClient {
     host: String,
     port: u16,
