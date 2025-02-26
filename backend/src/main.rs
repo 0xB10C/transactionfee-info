@@ -12,6 +12,8 @@ use std::io::Write;
 use std::process::exit;
 use std::sync::mpsc;
 use std::{error, fmt, io, thread};
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 
 const METRIC_TABLES: [&str; 5] = [
     "block_stats",
@@ -183,27 +185,36 @@ fn collect_statistics(args: &Args) -> Result<(), MainError> {
     // gets blocks from the Bitcoin Core REST interface and sends them onwards
     // to the `calc-stats` task
     let get_blocks_task = thread::spawn(move || -> Result<(), MainError> {
-        for height in std::cmp::max(db_height + 1, 0)
-            ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0)
-        {
-            debug!("get-blocks: getting block at height {}", height);
-            let block = match client.block_at_height(height as u64) {
-                Ok(block) => block,
-                Err(e) => {
-                    error!("Could not get block at height {}: {}", height, e);
-                    return Err(MainError::REST(e));
-                }
-            };
-            if let Err(_) = block_sender.send((height as i64, block)) {
-                warn!(
-                    "during sending block at height {} to stats generator: block receiver dropped",
-                    height
-                );
-                // We can return OK here. When the receiver is dropped, there
-                // probably was an error in the calc-stats task.
-                return Ok(());
-            }
-        }
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(16).build().unwrap();
+        let mut heights: Vec<i64> = (std::cmp::max(db_height + 1, 0)
+            ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0)).collect();
+        heights.sort();
+        pool.install(|| {
+            heights.par_iter()
+                .map(|&height| {
+                    debug!("get-blocks: getting block at height {}", height);
+                    let block = match client.block_at_height(height as u64) {
+                        Ok(block) => block,
+                        Err(e) => {
+                            error!("Could not get block at height {}: {}", height, e);
+                            return Err(MainError::REST(e));
+                        }
+                    };
+                    if let Err(_) = block_sender.send((height as i64, block)) {
+                        warn!(
+                            "during sending block at height {} to stats generator: block receiver dropped",
+                            height
+                        );
+                        // We can return OK here. When the receiver is dropped, there
+                        // probably was an error in the calc-stats task.
+                        return Ok(());
+                    }
+                    Ok(())
+                })
+                .for_each(drop); // Drop the result of the map (since it's already handled)
+
+            // drop(tx);
+        });            
         Ok(())
     });
 
