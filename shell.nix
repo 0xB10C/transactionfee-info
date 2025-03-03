@@ -20,6 +20,7 @@ pkgs.mkShell {
     pkgs.bitcoind
 
     # frontend
+    pkgs.hugo
     pkgs.optipng
   ];
 }
