@@ -7,8 +7,10 @@ pkgs.mkShell {
       pkgs.rustc
       pkgs.rustfmt
       pkgs.sqlite
+      pkgs.diesel-cli
 
       # frontend
+      pkgs.hugo
       pkgs.optipng
     ];
 }
