@@ -26,7 +26,7 @@ const DATABASE_BATCH_SIZE: usize = 100;
 
 // Don't fetch (and process) the most recent blocks to be safe
 // in-case of a reorg.
-const REORG_SAFETY_MARGIN: u64 = 6;
+pub const REORG_SAFETY_MARGIN: u64 = 6;
 
 #[derive(Debug)]
 pub enum MainError {
