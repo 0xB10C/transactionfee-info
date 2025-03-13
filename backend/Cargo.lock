@@ -134,9 +134,9 @@ checksum = "0b47c4ab7a93edb0c7198c5535ed9b52b63095f4e9b45279c6736cec4b856baf"
 
 [[package]]
 name = "bitcoin-pool-identification"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdb414ae206d8e5bde606d0c498764f7b7fd3bcf0d89aa5a648698804fedf243"
+checksum = "659c4bae537ce453890ff7c340f8e76df6d2ba19c6b96d67aaef9b809315dbf3"
 dependencies = [
  "bitcoin",
  "serde",
