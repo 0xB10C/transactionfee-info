@@ -7,6 +7,8 @@ use crate::db::TableInfo;
 use clap::Parser;
 use diesel::SqliteConnection;
 use log::{debug, error, info, warn};
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 use stats::Stats;
 use std::io::Write;
 use std::sync::mpsc;
@@ -167,27 +169,41 @@ pub fn collect_statistics(
     // gets blocks from the Bitcoin Core REST interface and sends them onwards
     // to the `calc-stats` task
     let get_blocks_task = thread::spawn(move || -> Result<(), MainError> {
-        for height in std::cmp::max(db_height + 1, 0)
-            ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0)
-        {
-            debug!("get-blocks: getting block at height {}", height);
-            let block = match client.block_at_height(height as u64) {
-                Ok(block) => block,
-                Err(e) => {
-                    error!("Could not get block at height {}: {}", height, e);
-                    return Err(MainError::REST(e));
-                }
-            };
-            if let Err(_) = block_sender.send((height as i64, block)) {
-                warn!(
-                    "during sending block at height {} to stats generator: block receiver dropped",
-                    height
-                );
-                // We can return OK here. When the receiver is dropped, there
-                // probably was an error in the calc-stats task.
-                return Ok(());
-            }
-        }
+        let pool = rayon::ThreadPoolBuilder::new()
+            // Spawn only 14 fetch threads for now, as the default workqueuedepth is 16 for Bitcoin
+            // Core. Doing more requests than workqueuedepth could lead to problems. This leaves
+            // two paralell requests from elsewhere.
+            .num_threads(14)
+            .build()
+            .unwrap();
+        let mut heights: Vec<i64> = (std::cmp::max(db_height + 1, 0)
+            ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0))
+            .collect();
+        heights.sort();
+        pool.install(|| {
+            heights.par_iter()
+                .map(|&height| {
+                    debug!("get-blocks: getting block at height {}", height);
+                    let block = match client.block_at_height(height as u64) {
+                        Ok(block) => block,
+                        Err(e) => {
+                            error!("Could not get block at height {}: {}", height, e);
+                            return Err(MainError::REST(e));
+                        }
+                    };
+                    if let Err(_) = block_sender.send((height as i64, block)) {
+                        warn!(
+                            "during sending block at height {} to stats generator: block receiver dropped",
+                            height
+                        );
+                        // We can return OK here. When the receiver is dropped, there
+                        // probably was an error in the calc-stats task.
+                        return Ok(());
+                    }
+                    Ok(())
+                })
+                .for_each(drop); // Drop the result of the map (since it's already handled)
+        });
         Ok(())
     });
 
