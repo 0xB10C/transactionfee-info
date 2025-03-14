@@ -220,10 +220,7 @@ pub fn collect_statistics(
                         height, e
                     );
                 } else {
-                    debug!(
-                        "calc-stats: processed block at height {} (block_receiver is now closed)",
-                        height
-                    );
+                    debug!("calc-stats: processed block at height {}", height);
                 }
             });
         }
