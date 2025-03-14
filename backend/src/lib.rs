@@ -1,14 +1,16 @@
-mod db;
+pub mod db;
 mod rest;
 mod schema;
 mod stats;
 
 use crate::db::TableInfo;
 use clap::Parser;
+use diesel::SqliteConnection;
 use log::{debug, error, info, warn};
 use stats::Stats;
 use std::io::Write;
 use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::{error, fmt, io, thread};
 
 const METRIC_TABLES: [&str; 5] = [
@@ -129,11 +131,15 @@ pub struct Args {
     pub no_stats: bool,
 }
 
-pub fn collect_statistics(args: &Args) -> Result<(), MainError> {
-    let connection = &mut db::establish_connection(&args.database_path)?;
-    db::run_pending_migrations(connection)?;
-
-    let db_height: i64 = db::get_db_block_height(connection)?.unwrap_or_default();
+pub fn collect_statistics(
+    args: &Args,
+    connection: Arc<Mutex<SqliteConnection>>,
+) -> Result<(), MainError> {
+    let connection = Arc::clone(&connection);
+    let db_height: i64 = {
+        let mut conn = connection.lock().unwrap();
+        db::get_db_block_height(&mut conn)?.unwrap_or_default()
+    };
 
     let client = rest::RestClient::new(&args.rest_host, args.rest_port);
     let chain_info = match client.chain_info() {
@@ -228,10 +234,10 @@ pub fn collect_statistics(args: &Args) -> Result<(), MainError> {
 
     // batch-insert task
     // inserts the block stats in batches
-    let database_path_clone = args.database_path.clone();
     let batch_insert_task = thread::spawn(move || -> Result<(), MainError> {
-        let connection = &mut db::establish_connection(&database_path_clone)?;
-        db::performance_tune(connection)?;
+        let connection = Arc::clone(&connection);
+        let mut conn = connection.lock().unwrap();
+        db::performance_tune(&mut conn)?;
         let mut stat_buffer = Vec::with_capacity(DATABASE_BATCH_SIZE);
 
         loop {
@@ -261,7 +267,7 @@ pub fn collect_statistics(args: &Args) -> Result<(), MainError> {
                         .max()
                         .unwrap_or_default()
                 );
-                db::insert_stats(connection, &stat_buffer)?;
+                db::insert_stats(&mut conn, &stat_buffer)?;
                 stat_buffer.clear();
             }
         }
@@ -273,7 +279,7 @@ pub fn collect_statistics(args: &Args) -> Result<(), MainError> {
                 "collect-statistics: writing the final batch of {} block-stats to database",
                 stat_buffer.len()
             );
-            db::insert_stats(connection, &stat_buffer)?;
+            db::insert_stats(&mut conn, &stat_buffer)?;
         } else {
             info!("collect-statistics: no new blocks to insert.");
         }
@@ -297,11 +303,14 @@ pub fn collect_statistics(args: &Args) -> Result<(), MainError> {
     Ok(())
 }
 
-pub fn write_csv_files(args: &Args) -> Result<(), MainError> {
-    let connection = &mut db::establish_connection(&args.database_path)?;
-
-    info!("Generating date.csv file.");
-    let date_column = db::date_column(connection);
+pub fn write_csv_files(
+    args: &Args,
+    connection: Arc<Mutex<SqliteConnection>>,
+) -> Result<(), MainError> {
+    let connection = Arc::clone(&connection);
+    let mut conn = connection.lock().unwrap();
+    info!("Generating date.csv file...");
+    let date_column = db::date_column(&mut conn);
     let mut date_file = std::fs::File::create(format!("{}/date.csv", args.csv_path))?;
     let date_content: String = date_column
         .iter()
@@ -311,7 +320,7 @@ pub fn write_csv_files(args: &Args) -> Result<(), MainError> {
     date_file.write_all(date_content.as_bytes())?;
 
     for table in METRIC_TABLES.iter() {
-        let columns = db::list_column_names(connection, table)?;
+        let columns = db::list_column_names(&mut conn, table)?;
 
         // filter out columns that aren't metrics and we don't want to create csv files for
         let columns_filtered: Vec<&TableInfo> = columns
@@ -321,7 +330,7 @@ pub fn write_csv_files(args: &Args) -> Result<(), MainError> {
 
         for column in columns_filtered.iter().map(|col| col.name.clone()) {
             info!("Generating metrics for '{}' in table '{}'.", column, table);
-            let avg_and_sum = db::column_sum_and_avg_by_date(connection, &column, table);
+            let avg_and_sum = db::column_sum_and_avg_by_date(&mut conn, &column, table);
 
             let mut avg_file =
                 std::fs::File::create(format!("{}/{}_avg.csv", args.csv_path, column))?;
