@@ -11,6 +11,7 @@ use stats::Stats;
 use std::io::Write;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::{error, fmt, io, thread};
 
 const METRIC_TABLES: [&str; 5] = [
@@ -160,36 +161,47 @@ pub fn collect_statistics(
     }
     let rest_height = chain_info.blocks;
 
-    let (block_sender, block_receiver) = mpsc::sync_channel(10);
+    let (block_sender, block_receiver) = mpsc::sync_channel(32);
     let (stat_sender, stat_receiver) = mpsc::sync_channel(100);
 
     // get-blocks task
     // gets blocks from the Bitcoin Core REST interface and sends them onwards
     // to the `calc-stats` task
-    let get_blocks_task = thread::spawn(move || -> Result<(), MainError> {
-        for height in std::cmp::max(db_height + 1, 0)
-            ..std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0)
-        {
-            debug!("get-blocks: getting block at height {}", height);
-            let block = match client.block_at_height(height as u64) {
-                Ok(block) => block,
-                Err(e) => {
-                    error!("Could not get block at height {}: {}", height, e);
-                    return Err(MainError::REST(e));
+    let mut get_blocks_tasks = vec![];
+    let height = Arc::new(AtomicI64::new(std::cmp::max(db_height, 0)));
+    // Spawn 15 threads for now. Default rpcthreads is 4 and workqueuedepth is 16, so any other client making a request could fail. Bump to 16 in v29.
+    for _ in 0..15 {
+        let client = client.clone();
+        let block_sender = block_sender.clone();
+        let height = height.clone();
+        let get_block_task = thread::spawn(move || -> Result<(), MainError> {
+            loop {
+                let height = height.fetch_add(1, Ordering::Relaxed);
+                if height >= std::cmp::max((rest_height - REORG_SAFETY_MARGIN) as i64, 0) {
+                    break;
                 }
-            };
-            if let Err(_) = block_sender.send((height as i64, block)) {
-                warn!(
+                debug!("get-blocks: getting block at height {}", height);
+                let block = match client.block_at_height(height as u64) {
+                    Ok(block) => block,
+                    Err(e) => {
+                        error!("Could not get block at height {}: {}", height, e);
+                        return Err(MainError::REST(e));
+                    }
+                };
+                if let Err(_) = block_sender.send((height as i64, block)) {
+                    warn!(
                     "during sending block at height {} to stats generator: block receiver dropped",
                     height
                 );
-                // We can return OK here. When the receiver is dropped, there
-                // probably was an error in the calc-stats task.
-                return Ok(());
+                    // We can return OK here. When the receiver is dropped, there
+                    // probably was an error in the calc-stats task.
+                    return Ok(());
+                }
             }
-        }
-        Ok(())
-    });
+            Ok(())
+        });
+        get_blocks_tasks.push(get_block_task);
+    }
 
     // calc-stats task
     // calculates the per block stats and sends them onwards to the batch-insert
@@ -289,9 +301,9 @@ pub fn collect_statistics(
         Ok(())
     });
 
-    get_blocks_task
-        .join()
-        .expect("The get-blocks task thread panicked")?;
+    for t in get_blocks_tasks {
+        t.join().expect("The get-blocks task thread panicked")?;
+    }
     calc_stats_task
         .join()
         .expect("The calc-stats task thread panicked")?;
