@@ -284,6 +284,7 @@ pub fn collect_statistics(
         } else {
             info!("collect-statistics: no new blocks to insert.");
         }
+        let db_height = db::get_db_block_height(&mut conn)?.unwrap_or_default();
         info!(
             "collect-statistics: database is at height {} with a reorg-safety margin of {}",
             db_height, REORG_SAFETY_MARGIN,
