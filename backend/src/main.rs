@@ -22,14 +22,14 @@ fn main() {
     let conn = Arc::new(Mutex::new(conn));
 
     if !args.no_stats {
-        if let Err(e) = collect_statistics(&args, Arc::clone(&conn)) {
+        if let Err(e) = collect_statistics(&args.rest_host, args.rest_port, Arc::clone(&conn)) {
             error!("Could not collect statistics: {}", e);
             exit(1);
         };
     }
 
     if !args.no_csv {
-        if let Err(e) = write_csv_files(&args, conn) {
+        if let Err(e) = write_csv_files(&args.csv_path, conn) {
             error!("Could not write CSV files to disk: {}", e);
             exit(1);
         };

@@ -132,7 +132,8 @@ pub struct Args {
 }
 
 pub fn collect_statistics(
-    args: &Args,
+    rest_host: &str,
+    rest_port: u16,
     connection: Arc<Mutex<SqliteConnection>>,
 ) -> Result<(), MainError> {
     let connection = Arc::clone(&connection);
@@ -141,13 +142,13 @@ pub fn collect_statistics(
         db::get_db_block_height(&mut conn)?.unwrap_or_default()
     };
 
-    let client = rest::RestClient::new(&args.rest_host, args.rest_port);
+    let client = rest::RestClient::new(rest_host, rest_port);
     let chain_info = match client.chain_info() {
         Ok(chain_info) => chain_info,
         Err(e) => {
             error!(
                 "Could load chain information from Bitcoin Core at {}:{}: {}",
-                args.rest_host, args.rest_port, e
+                rest_host, rest_port, e
             );
             return Err(MainError::REST(e));
         }
@@ -304,14 +305,14 @@ pub fn collect_statistics(
 }
 
 pub fn write_csv_files(
-    args: &Args,
+    csv_path: &str,
     connection: Arc<Mutex<SqliteConnection>>,
 ) -> Result<(), MainError> {
     let connection = Arc::clone(&connection);
     let mut conn = connection.lock().unwrap();
     info!("Generating date.csv file...");
     let date_column = db::date_column(&mut conn);
-    let mut date_file = std::fs::File::create(format!("{}/date.csv", args.csv_path))?;
+    let mut date_file = std::fs::File::create(format!("{}/date.csv", csv_path))?;
     let date_content: String = date_column
         .iter()
         .map(|row| format!("{}\n", row.date))
@@ -332,8 +333,7 @@ pub fn write_csv_files(
             info!("Generating metrics for '{}' in table '{}'.", column, table);
             let avg_and_sum = db::column_sum_and_avg_by_date(&mut conn, &column, table);
 
-            let mut avg_file =
-                std::fs::File::create(format!("{}/{}_avg.csv", args.csv_path, column))?;
+            let mut avg_file = std::fs::File::create(format!("{}/{}_avg.csv", csv_path, column))?;
             let avg_content: String = avg_and_sum
                 .iter()
                 .map(|aas| format!("{:.4}\n", aas.avg))
@@ -341,8 +341,7 @@ pub fn write_csv_files(
             avg_file.write_all(format!("{}_avg\n", column).as_bytes())?;
             avg_file.write_all(avg_content.as_bytes())?;
 
-            let mut sum_file =
-                std::fs::File::create(format!("{}/{}_sum.csv", args.csv_path, column))?;
+            let mut sum_file = std::fs::File::create(format!("{}/{}_sum.csv", csv_path, column))?;
             let sum_content: String = avg_and_sum
                 .iter()
                 .map(|aas| format!("{}\n", aas.sum))
