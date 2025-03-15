@@ -9,6 +9,7 @@ use std::{collections::HashSet, error, fmt, num::ParseIntError};
 use crate::rest::{Block, InputData, ScriptPubkeyType};
 
 const UNKNOWN_POOL_ID: i32 = 0;
+const P2A_DUST_THRESHOLD: u64 = 240;
 
 #[derive(Debug)]
 pub enum StatsError {
@@ -550,6 +551,7 @@ pub struct InputStats {
     inputs_p2tr_keypath: i32,
     inputs_p2tr_scriptpath: i32,
     inputs_p2a: i32,
+    inputs_p2a_dust: i32,
     inputs_unknown: i32,
 
     inputs_spend_in_same_block: i32,
@@ -619,6 +621,10 @@ impl InputStats {
                 if matches!(prevout.script_pub_key.type_, ScriptPubkeyType::Anchor) {
                     s.inputs_p2a += 1;
                     s.inputs_unknown -= 1;
+
+                    if prevout.value < bitcoin::Amount::from_sat(P2A_DUST_THRESHOLD) {
+                        s.inputs_p2a_dust += 1;
+                    }
                 }
             }
         }
@@ -643,6 +649,7 @@ pub struct OutputStats {
     outputs_opreturn: i32,
     outputs_p2tr: i32,
     outputs_p2a: i32,
+    outputs_p2a_dust: i32,
     outputs_unknown: i32,
 
     outputs_p2pk_amount: i64,
@@ -699,6 +706,10 @@ impl OutputStats {
                     OutputType::P2a => {
                         s.outputs_p2a += 1;
                         s.outputs_p2a_amount += output.value.to_sat() as i64;
+
+                        if output.value < bitcoin::Amount::from_sat(P2A_DUST_THRESHOLD) {
+                            s.outputs_p2a_dust += 1;
+                        }
                     }
                     OutputType::OpReturn(_) => {
                         s.outputs_opreturn += 1;
@@ -887,6 +898,7 @@ mod tests {
                 inputs_p2tr_keypath: 1,
                 inputs_p2tr_scriptpath: 0,
                 inputs_p2a: 0,
+                inputs_p2a_dust: 0,
                 inputs_unknown: 0,
                 inputs_spend_in_same_block: 110,
             },
@@ -902,6 +914,7 @@ mod tests {
                 outputs_opreturn: 13,
                 outputs_p2tr: 7,
                 outputs_p2a: 0,
+                outputs_p2a_dust: 0,
                 outputs_unknown: 0,
                 outputs_p2pk_amount: 0,
                 outputs_p2pkh_amount: 33803517254,
@@ -1043,6 +1056,7 @@ mod tests {
                 inputs_p2tr_keypath: 0,
                 inputs_p2tr_scriptpath: 0,
                 inputs_p2a: 0,
+                inputs_p2a_dust: 0,
                 inputs_unknown: 0,
                 inputs_spend_in_same_block: 52,
             },
@@ -1058,6 +1072,7 @@ mod tests {
                 outputs_opreturn: 0,
                 outputs_p2tr: 0,
                 outputs_p2a: 0,
+                outputs_p2a_dust: 0,
                 outputs_unknown: 0,
                 outputs_p2pk_amount: 0,
                 outputs_p2pkh_amount: 240283730043,
