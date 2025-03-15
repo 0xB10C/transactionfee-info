@@ -111,6 +111,7 @@ diesel::table! {
         inputs_unknown -> Integer,
         inputs_spend_in_same_block -> Integer,
         inputs_p2a -> Integer,
+        inputs_p2a_dust -> Integer,
     }
 }
 
@@ -138,6 +139,7 @@ diesel::table! {
         outputs_unknown_amount -> BigInt,
         outputs_p2a -> Integer,
         outputs_p2a_amount -> BigInt,
+        outputs_p2a_dust -> Integer,
     }
 }
 
