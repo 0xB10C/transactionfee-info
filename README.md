@@ -1,9 +1,10 @@
 # transactionfee-info
-This project provides protocol-level statistics and insights about Bitcoin: Blocks, Transactions, SegWit and more. Implemented with a Rust backend and Hugo-based frontend.
+This project provides protocol-level statistics and insights about Bitcoin: Blocks, Transactions, Script usage and more. Powered by a Rust backend and Hugo-based frontend.
 
 ## Prerequisites
-- Nix
-- Access to a Bitcoin Core node with REST API enabled
+- A Bitcoin Core node with the REST API enabled
+- Installed development tools - `rustc`, `cargo`, `hugo`, _or_
+- Alternative development environment - Nix (provides all development tools in an isolated environment)
 
 ### Bitcoin Core Setup
 1. Add the following lines to your `bitcoin.conf`
@@ -29,14 +30,11 @@ nix-shell
 
 # Setup and start the backend
 cd backend
-# Run database migrations
-diesel setup
-diesel migration run
 # This uses the default settings of connecting to localhost:8332
 # creating a SQLite database in ./db.sqlite
 # and writing the CSV files to ./csv
 # See below for more details on the command-line arguments
-cargo run --release &
+cargo run --release
 ```
 
 Note that this process could take many hours if you are starting from the genesis block!
@@ -54,13 +52,13 @@ cd frontend
 hugo server -D
 ```
 
-The frontend will now be available at `http://localhost:1313`
+Hugo will start serving the frontend on a webserver and provide an URL to it.
 
 ## Backend Configuration
 The backend application accepts several command-line arguments to customise its behaviour:
 
 ```bash
-cargo run -- [OPTIONS]
+cargo run -- --help
 ```
 
 Available options:

@@ -1,6 +1,7 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
+
   shellHook = ''
     # during the integration tests, don't try to download a bitcoind binary
     # use the nix one instead
