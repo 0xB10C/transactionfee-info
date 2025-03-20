@@ -1,12 +1,12 @@
 use crate::schema;
 use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, Stats, TxStats};
+use crate::MainError;
 use diesel::prelude::*;
-use diesel::result::ConnectionError;
 use diesel::sql_query;
 use diesel::sql_types::{BigInt, Float, Text};
 use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use log::debug;
+use log::{debug, info};
 use std::error::Error;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations/");
@@ -33,11 +33,17 @@ pub struct DateColumn {
     pub date: String,
 }
 
-pub fn establish_connection(database_path: &str) -> Result<SqliteConnection, ConnectionError> {
-    SqliteConnection::establish(&database_path)
+pub fn open_db_and_run_migrations(database_path: &str) -> Result<SqliteConnection, MainError> {
+    debug!("trying to open database: {}", database_path);
+    let mut conn = SqliteConnection::establish(&database_path)?;
+    debug!("trying to run pending migrations..");
+    conn.run_pending_migrations(MIGRATIONS)?;
+    info!("database {} opened", database_path);
+    return Ok(conn);
 }
 
 pub fn performance_tune(conn: &mut SqliteConnection) -> Result<(), diesel::result::Error> {
+    debug!("performance tuning the database for batch inserts..");
     sql_query(
         r#"
         pragma journal_mode = WAL;
@@ -46,13 +52,6 @@ pub fn performance_tune(conn: &mut SqliteConnection) -> Result<(), diesel::resul
     "#,
     )
     .execute(conn)?;
-    Ok(())
-}
-
-pub fn run_pending_migrations(
-    conn: &mut SqliteConnection,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
-    conn.run_pending_migrations(MIGRATIONS)?;
     Ok(())
 }
 

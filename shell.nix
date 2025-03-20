@@ -1,16 +1,25 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-    nativeBuildInputs = [
-      # backend
-      pkgs.cargo
-      pkgs.rustc
-      pkgs.rustfmt
-      pkgs.sqlite
-      pkgs.diesel-cli
+  shellHook = ''
+    # during the integration tests, don't try to download a bitcoind binary
+    # use the nix one instead
+    export BITCOIND_SKIP_DOWNLOAD=1
+    export BITCOIND_EXE=${pkgs.bitcoind}/bin/bitcoind
+  '';
 
-      # frontend
-      pkgs.hugo
-      pkgs.optipng
-    ];
+  nativeBuildInputs = [
+    # backend
+    pkgs.cargo
+    pkgs.rustc
+    pkgs.rustfmt
+    pkgs.sqlite
+
+    # for integration-tests
+    pkgs.bitcoind
+
+    # frontend
+    pkgs.hugo
+    pkgs.optipng
+  ];
 }
