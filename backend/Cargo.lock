@@ -829,8 +829,7 @@ dependencies = [
 [[package]]
 name = "rawtx-rs"
 version = "0.1.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c01eec9b9fda531706be363e22f357d1cc2179d1f531aa5cae90a9613c1affdf"
+source = "git+https://github.com/0xb10c/rawtx-rs.git?branch=2025-03-fix-DER-encoding-detection#d07e557db1d2c02a30f0723febd86238fbea9e4b"
 dependencies = [
  "bitcoin",
  "hex",
