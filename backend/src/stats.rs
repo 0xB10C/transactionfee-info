@@ -3,7 +3,9 @@ use bitcoin_pool_identification::{default_data, Pool, PoolIdentification};
 use chrono::DateTime;
 use diesel::prelude::*;
 use log::{debug, error};
-use rawtx_rs::{input::InputType, output::OutputType, script::SignatureType, tx::TxInfo};
+use rawtx_rs::{
+    input::InputType, output::OutputType, script::DEREncoding, script::SignatureType, tx::TxInfo,
+};
 use std::{collections::HashSet, error, fmt, num::ParseIntError};
 
 use crate::rest::{Block, InputData, ScriptPubkeyType};
@@ -446,7 +448,7 @@ impl ScriptStats {
                         s.sigs_schnorr += 1;
                     } else if matches!(sig.signature, SignatureType::Ecdsa(_)) {
                         s.sigs_ecdsa += 1;
-                        if sig.was_der_encoded {
+                        if sig.der_encoded == DEREncoding::Valid {
                             s.sigs_ecdsa_strict_der += 1;
                         } else {
                             s.sigs_ecdsa_not_strict_der += 1;
