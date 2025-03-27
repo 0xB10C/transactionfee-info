@@ -3,7 +3,7 @@ use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, Stats, TxSt
 use crate::MainError;
 use diesel::prelude::*;
 use diesel::sql_query;
-use diesel::sql_types::{BigInt, Float, Text};
+use diesel::sql_types::{BigInt, Float, Integer, Text};
 use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use log::{debug, info};
@@ -86,6 +86,112 @@ pub fn column_sum_and_avg_by_date(
 pub fn date_column(conn: &mut SqliteConnection) -> Vec<DateColumn> {
     sql_query(format!(
         "SELECT date as date FROM block_stats GROUP BY date"
+    ))
+    .get_results(conn)
+    .unwrap()
+}
+
+#[derive(Debug, QueryableByName)]
+pub struct MiningPoolID {
+    #[diesel(sql_type = Integer)]
+    pub pool_id: i32,
+    #[diesel(sql_type = Integer)]
+    pub count: i32,
+}
+
+pub fn current_top5_mining_pools(conn: &mut SqliteConnection) -> Vec<MiningPoolID> {
+    sql_query(format!(
+        r#"
+        WITH recent_blocks AS (
+            SELECT pool_id
+            FROM block_stats
+            ORDER BY height DESC
+            LIMIT 4032
+        )
+        SELECT pool_id, COUNT(*) as count
+        FROM recent_blocks
+        GROUP BY pool_id
+        ORDER BY count DESC
+        LIMIT 5;
+        "#
+    ))
+    .get_results(conn)
+    .unwrap()
+}
+
+#[derive(Debug, QueryableByName)]
+pub struct Top5PoolBlocksPerDay {
+    #[diesel(sql_type = Text)]
+    pub date: String,
+    #[diesel(sql_type = Text)]
+    pub top1_name: String,
+    #[diesel(sql_type = Integer)]
+    pub top1_blocks: i32,
+    #[diesel(sql_type = Text)]
+    pub top2_name: String,
+    #[diesel(sql_type = Integer)]
+    pub top2_blocks: i32,
+    #[diesel(sql_type = Text)]
+    pub top3_name: String,
+    #[diesel(sql_type = Integer)]
+    pub top3_blocks: i32,
+    #[diesel(sql_type = Text)]
+    pub top4_name: String,
+    #[diesel(sql_type = Integer)]
+    pub top4_blocks: i32,
+    #[diesel(sql_type = Text)]
+    pub top5_name: String,
+    #[diesel(sql_type = Integer)]
+    pub top5_blocks: i32,
+    #[diesel(sql_type = Integer)]
+    pub total: i32,
+}
+
+pub fn blocks_per_day_top5_pools(conn: &mut SqliteConnection, pool_ids: &[i32; 5], pool_names: &[&str; 5]) -> Vec<Top5PoolBlocksPerDay> {
+    sql_query(format!(
+        r#"
+        SELECT
+            t."date",
+            '{}' as top1_name,
+            COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top1_blocks,
+            '{}' as top2_name,
+            COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top2_blocks,
+            '{}' as top3_name,
+            COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top3_blocks,
+            '{}' as top4_name,
+            COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top4_blocks,
+            '{}' as top5_name,
+            COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top5_blocks,
+            COALESCE(subquery.total_count, 0) AS total
+        FROM block_stats t
+        LEFT JOIN (
+            SELECT "date", COUNT(*) AS total_count
+            FROM block_stats
+            GROUP BY "date"
+        ) subquery
+            ON t."date" = subquery."date"
+        WHERE pool_id IN ({}, {}, {}, {}, {})
+        GROUP BY t."date", subquery.total_count
+        ORDER BY t."date"
+        LIMIT (356 * 5);
+        "#,
+        // ids for CASE WHEN pool_id
+        pool_names[0],
+        pool_ids[0],
+        pool_names[1],
+        pool_ids[1],
+        pool_names[2],
+        pool_ids[2],
+        pool_names[3],
+        pool_ids[3],
+        pool_names[4],
+        pool_ids[4],
+        // ids for WHERE pool_id IN
+        pool_ids[0],
+        pool_ids[1],
+        pool_ids[2],
+        pool_ids[3],
+        pool_ids[4],
     ))
     .get_results(conn)
     .unwrap()

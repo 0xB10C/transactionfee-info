@@ -3,6 +3,8 @@ use diesel::SqliteConnection;
 use log::info;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
+use bitcoin::Network;
+
 
 const METRIC_TABLES: [&str; 5] = [
     "block_stats",
@@ -70,5 +72,60 @@ pub fn metrics_csv(
             sum_file.write_all(sum_content.as_bytes())?;
         }
     }
+    Ok(())
+}
+
+// Generates a top5_miningpools.csv file with TODO
+pub fn top5_miningpools_csv(
+    csv_path: &str,
+    connection: Arc<Mutex<SqliteConnection>>,
+) -> Result<(), MainError> {
+    const FILENAME: &str = "top5pools.csv";
+    const HEADER: &str = "date,top1_name,top1_blocks,top2_name,top2_blocks,top3_name,top3_blocks,top4_name,top4_blocks,top5_name,top5_blocks";
+
+    let connection = Arc::clone(&connection);
+    let mut conn = connection.lock().unwrap();
+    info!("Generating {} file...", FILENAME);
+
+    let pool_data = bitcoin_pool_identification::default_data(Network::Bitcoin);
+
+    let top5 = db::current_top5_mining_pools(&mut conn);
+    let mut pool_ids: [i32; 5] = [-1, -1, -1, -1, -1];
+    let mut pool_names: [&str; 5] = ["", "", "", "", ""];
+    for (i, top_pool) in top5.iter().enumerate() {
+        if i >= pool_ids.len() {
+            break;
+        }
+        pool_ids[i] = top_pool.pool_id;
+        for pool in pool_data.iter().rev() {
+            if top_pool.pool_id == pool.id as i32{
+                pool_names[i] = &pool.name;
+                break;
+            }
+        }
+    }
+
+    let mut file = std::fs::File::create(format!("{}/{}.csv", csv_path, FILENAME))?;
+    let rows = db::blocks_per_day_top5_pools(&mut conn, &pool_ids, &pool_names);
+    let content: String = rows
+        .iter()
+        .map(|row| format!("{},\"{}\",{},\"{}\",{},\"{}\",{},\"{}\",{},\"{}\",{},{}\n",
+            row.date,
+            row.top1_name,
+            row.top1_blocks,
+            row.top2_name,
+            row.top2_blocks,
+            row.top3_name,
+            row.top3_blocks,
+            row.top4_name,
+            row.top4_blocks,
+            row.top5_name,
+            row.top5_blocks,
+            row.total
+        ))
+        .collect();
+
+    file.write_all(format!("{}\n", HEADER).as_bytes())?;
+    file.write_all(content.as_bytes())?;
     Ok(())
 }
