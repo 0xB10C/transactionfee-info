@@ -160,7 +160,7 @@ function drawAnnotations(annotations, focus, annotationLine) {
       .text(" " + annoData[0].date.toLocaleDateString() + ": " + annotation.text + " ")
       .attr("text-anchor", "end")
       .attr("y", "-.3em");
-      
+
   }
 }
 
@@ -211,7 +211,7 @@ svg.append("g")
 var focus = svg.append("g")
   .attr("class", "focus")
   .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
- 
+
 var context = svg.append("g")
   .attr("class", "context")
   .attr("transform", "translate(" + marginBrush.left + "," + marginBrush.top + ")");
@@ -245,7 +245,7 @@ function generatePNG(filename) {
 window.onload = function () {
   let queryValues = readQueryString()
 
-  // set the starting values 
+  // set the starting values
   document.getElementById('rolling-average-input').value = queryValues[queryParameterAvg] || chartRollingAverage;
   currentRollingAverage = queryValues[queryParameterAvg] ||  chartRollingAverage;
   currentIsAnnotations =  queryValues[queryParameterAnnotations] == "true" || true
@@ -265,12 +265,12 @@ window.onload = function () {
     } else {
       currentStartDate = d3.timeParse("%Y-%m-%d")(queryValues[queryParameterStart]) || new Date(currentEndDate).setFullYear(currentEndDate.getFullYear() - 2)
     }
-    
+
     draw()
   });
 
   d3.select("#rolling-average-input").on("change", function() {
-    currentRollingAverage = this.value    
+    currentRollingAverage = this.value
     setDescriptionRollingAverageUnit(currentRollingAverage)
     draw()
   });
@@ -287,7 +287,7 @@ window.onload = function () {
 
   d3.select("#permalink-input").on("click", function() {
     let permalink = generatePermaLink();
-    window.prompt("Permalink to this chart with these settings:", permalink);  
+    window.prompt("Permalink to this chart with these settings:", permalink);
   });
 }
 
@@ -307,7 +307,7 @@ function lineWithAreaChart() {
 
   focus.selectAll("*").remove();
   context.selectAll("*").remove();
-  
+
   focus.append("clipPath")
     .attr("id", "chart-clip")
     .append("rect")
@@ -438,7 +438,7 @@ function lineWithAreaChart() {
     // update the current date variables
     currentStartDate = xScale.domain()[0]
     currentEndDate = xScale.domain()[1]
-  
+
     focus.select(".line").attr("d", line);
     focus.select(".area").attr("d", area);
     focus.selectAll(".annotationLine").attr("d", annotationLine)
@@ -453,7 +453,7 @@ function stackedAreaChart() {
 
   focus.selectAll("*").remove();
   context.selectAll("*").remove();
-  
+
   focus.append("clipPath")
     .attr("id", "chart-clip")
     .append("rect")
@@ -677,8 +677,7 @@ function twoLineChart() {
     .attr("stroke-width", 2)
     .attr("clip-path","url(#chart-clip)")
     .attr("d", lineY1)
-
-  // line in main chart
+  // line y2 in main chart
   focus.append("path")
     .datum(data)
     .attr("class", "line")
@@ -753,6 +752,225 @@ function twoLineChart() {
 
     focus.select("#lineY1").attr("d", lineY1);
     focus.select("#lineY2").attr("d", lineY2);
+    focus.selectAll(".annotationLine").attr("d", annotationLine)
+    focus.selectAll(".annotationText").attr("transform", d => {return "translate(" + xScaledValue(d) + " 5) rotate(-90)"})
+    focus.select(".axis--x").call(xAxis);
+    focus.select(".axis--y").call(yAxis);
+  }
+}
+
+function fiveLineChart() {
+  // defaults
+  keys = ["y1", "y2", "y3", "y4", "y5"]
+  colors = {"y1": colorBLUE, "y2": colorORANGE, "y3": colorPURPLE, "y4": colorYELLOW, "y5": colorAQUA}
+
+  const colorOPRETURN = colorLIME
+const colorP2PK = colorGRAY
+const colorP2PKH = colorRED
+const colorNestedP2WPKH = colorAQUA
+const colorP2WPKH = colorPURPLE
+const colorP2MS = colorNAVY
+const colorP2SH = colorYELLOW
+const colorNestedP2WSH = colorORANGE
+const colorP2WSH = colorBLUE
+const colorP2TR = colorMAROON
+
+  data = movingAverage(preProcessedData, currentRollingAverage, keys)
+
+  focus.selectAll("*").remove();
+  context.selectAll("*").remove();
+
+  focus.append("clipPath")
+    .attr("id", "chart-clip")
+    .append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+  // functions for x and y values
+  var xValue = (d => d.date);
+  var yValue = (d => d.y);
+  var yValue1 = (d => d.y1);
+  var yValue2 = (d => d.y2);
+  var yValue3 = (d => d.y3);
+  var yValue4 = (d => d.y4);
+  var yValue5 = (d => d.y5);
+
+  // functions for scaled x and y values
+  var xScaledValue = (d => xScale(xValue(d)))
+  var yScaledValue = (d => yScale(yValue(d)))
+
+  var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? Math.max(
+    yValue1(d),
+    yValue2(d),
+    yValue3(d),
+    yValue4(d),
+    yValue5(d),
+  )  : 0)])
+
+  var brush = d3.brushX()
+    .extent([[0, 0], [width, heightBrush]])
+    .on("end", brushed);
+
+  var lineY1 = d3.line()
+    .curve(currentIsStepPlot ? d3.curveStep : d3.curveNatural)
+    .x(d => xScaledValue(d))
+    .y(d => yScale(yValue1(d)));
+  var lineY2 = d3.line()
+    .curve(currentIsStepPlot ? d3.curveStep : d3.curveNatural)
+    .x(d => xScaledValue(d))
+    .y(d => yScale(yValue2(d)));
+  var lineY3 = d3.line()
+    .curve(currentIsStepPlot ? d3.curveStep : d3.curveNatural)
+    .x(d => xScaledValue(d))
+    .y(d => yScale(yValue3(d)));
+  var lineY4 = d3.line()
+    .curve(currentIsStepPlot ? d3.curveStep : d3.curveNatural)
+    .x(d => xScaledValue(d))
+    .y(d => yScale(yValue4(d)));
+  var lineY5 = d3.line()
+    .curve(currentIsStepPlot ? d3.curveStep : d3.curveNatural)
+    .x(d => xScaledValue(d))
+    .y(d => yScale(yValue5(d)));
+
+  var annotationLine = d3.line()
+    .x(d => xScaledValue(d))
+    .y(d => d.y)
+
+  setDescriptionLegend(keys, labels, colors)
+
+  xScale.domain(d3.extent(data, d => xValue(d)));
+  yScale.domain(d3.extent(data, d => yValue5(d)));
+  xScaleBrush.domain(xScale.domain());
+
+  // x-axis main chart
+  focus.append("g")
+    .attr("class", "axis axis--x")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+  // y-axis main chart
+  focus.append("g")
+    .attr("class", "axis axis--y")
+    .call(yAxis);
+
+  // line y1 in main chart
+  focus.append("path")
+    .datum(data)
+    .attr("class", "line")
+    .attr("id", "lineY1")
+    .attr("fill", "none")
+    .attr("stroke", colors[keys[0]])
+    .attr("stroke-width", 2)
+    .attr("clip-path","url(#chart-clip)")
+    .attr("d", lineY1)
+  // line y2 in main chart
+  focus.append("path")
+    .datum(data)
+    .attr("class", "line")
+    .attr("id", "lineY2")
+    .attr("fill", "none")
+    .attr("stroke", colors[keys[1]])
+    .attr("stroke-width", 2)
+    .attr("clip-path","url(#chart-clip)")
+    .attr("d", lineY2)
+  // line y3 in main chart
+  focus.append("path")
+    .datum(data)
+    .attr("class", "line")
+    .attr("id", "lineY3")
+    .attr("fill", "none")
+    .attr("stroke", colors[keys[2]])
+    .attr("stroke-width", 2)
+    .attr("clip-path","url(#chart-clip)")
+    .attr("d", lineY3)
+  // line y4 in main chart
+  focus.append("path")
+    .datum(data)
+    .attr("class", "line")
+    .attr("id", "lineY4")
+    .attr("fill", "none")
+    .attr("stroke", colors[keys[3]])
+    .attr("stroke-width", 2)
+    .attr("clip-path","url(#chart-clip)")
+    .attr("d", lineY4)
+  // line y5 in main chart
+  focus.append("path")
+    .datum(data)
+    .attr("class", "line")
+    .attr("id", "lineY5")
+    .attr("fill", "none")
+    .attr("stroke", colors[keys[4]])
+    .attr("stroke-width", 2)
+    .attr("clip-path","url(#chart-clip)")
+    .attr("d", lineY5)
+
+  drawAnnotations(annotations, focus, annotationLine)
+
+  // x-axis for brush
+  context.append("g")
+    .attr("class", "axis axis--x")
+    .attr("transform", "translate(0," + heightBrush + ")")
+    .style("opacity", 0.5)
+    .call(xAxisBrush);
+
+  // adds an invisible overlay to register mouse actions on
+  focus.append("rect")
+    .attr("class", "overlay")
+    .attr("width", width)
+    .attr("height", height)
+    .style("fill", "none")
+    .style("pointer-events", "all")
+    .on("mouseout", _ => tooltip.transition().duration(1).style("opacity", 0))
+    .on("mousemove", mousemove);
+
+  bisectDate = d3.bisector(function(d) { return d.date; }).left;
+
+  function mousemove() {
+    let x0 = xScale.invert(d3.mouse(this)[0])
+    let i = bisectDate(data, x0, 1)
+    let d0 = data[i - 1],
+        d1 = data[i],
+        d = x0 - d0.year > d1.year - x0 ? d1 : d0;
+
+    let doc = document.documentElement;
+    let left = (window.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0);
+    let top = (window.pageYOffset || doc.scrollTop)  - (doc.clientTop || 0);
+    let chartPos = chartWrapper.getBoundingClientRect();
+
+    let yPos = d3.mouse(this)[1] + chartPos.y + top + 20
+    let xPos = d3.mouse(this)[0] + chartPos.x + left + 60
+
+    // switch tooltip position to the left side when on the right half of the chart
+    let docWidth = (document.width !== undefined) ? document.width : document.body.offsetWidth
+    if (xPos >= docWidth/2) (xPos -= tooltip.node().clientWidth)
+
+    tooltip.html(formatTooltip(d))
+    tooltip.transition().duration(5).style("left", xPos + "px").style("top", yPos + "px").style("opacity", 1);
+  }
+
+  // brush
+  context.append("g")
+    .attr("class", "brush")
+    .attr("fill", "none")
+    .call(brush)
+    .call(brush.move, [currentStartDate, currentEndDate].map(xScale));
+
+  function brushed() {
+    if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
+    var s = d3.event.selection || xScaleBrush.range();
+    xScale.domain(s.map(xScaleBrush.invert, xScaleBrush));
+    yScale.domain(yDomain(preProcessedData));
+    setDescriptionTimeframe(xScale.domain())
+
+    // update the current date variables
+    currentStartDate = xScale.domain()[0]
+    currentEndDate = xScale.domain()[1]
+
+    focus.select("#lineY1").attr("d", lineY1);
+    focus.select("#lineY2").attr("d", lineY2);
+    focus.select("#lineY3").attr("d", lineY3);
+    focus.select("#lineY4").attr("d", lineY4);
+    focus.select("#lineY5").attr("d", lineY5);
     focus.selectAll(".annotationLine").attr("d", annotationLine)
     focus.selectAll(".annotationText").attr("transform", d => {return "translate(" + xScaledValue(d) + " 5) rotate(-90)"})
     focus.select(".axis--x").call(xAxis);
@@ -958,7 +1176,7 @@ const queryParameterAnnotations = "annotation"
 
 function readQueryString() {
   let params = new URLSearchParams(window.location.search);
-  
+
   return {
     "avg": params.get(queryParameterAvg),
     "step": params.get(queryParameterStep),
