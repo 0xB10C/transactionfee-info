@@ -89,13 +89,13 @@ pub fn top5_miningpools_csv(
     let pool_data = bitcoin_pool_identification::default_data(Network::Bitcoin);
 
     let top5 = db::current_top5_mining_pools(&mut conn);
-    let mut pool_ids: [i32; 5] = [-1, -1, -1, -1, -1];
+    let mut pool_ids: [Vec<i32>; 5] = [vec![-1], vec![-1], vec![-1], vec![-1], vec![-1]];
     let mut pool_names: [&str; 5] = ["", "", "", "", ""];
     for (i, top_pool) in top5.iter().enumerate() {
         if i >= pool_ids.len() {
             break;
         }
-        pool_ids[i] = top_pool.pool_id;
+        pool_ids[i] = vec![top_pool.pool_id];
         for pool in pool_data.iter().rev() {
             if top_pool.pool_id == pool.id as i32 {
                 pool_names[i] = &pool.name;
@@ -118,7 +118,7 @@ pub fn top5_miningpools_csv(
         )
         .as_bytes(),
     )?;
-    let rows = db::blocks_per_day_top5_pools(&mut conn, &pool_ids);
+    let rows = db::blocks_per_day_top5_pool_groups(&mut conn, &pool_ids);
     let content: String = rows
         .iter()
         .map(|row| {
