@@ -7,6 +7,7 @@ use diesel::sql_types::{BigInt, Float, Integer, Text};
 use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use log::{debug, info};
+use std::collections::BTreeSet;
 use std::error::Error;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations/");
@@ -137,20 +138,40 @@ pub struct Top5PoolBlocksPerDay {
     pub total: i32,
 }
 
-pub fn blocks_per_day_top5_pools(
+// formats a vector of i32's to comma separated list of ids
+// suitable for SQL
+// vec![1, 2, 3] -> "1, 2, 3"
+fn vec_to_string(ids: &[i32]) -> String {
+    ids.iter()
+        .map(|&num| num.to_string())
+        .collect::<Vec<String>>()
+        .join(", ")
+}
+
+/// Gets the blocks per day for the top 5 pool groups.
+/// A pool group can either be single pool or a group of pools
+/// like e.g. a proxy pool group.
+pub fn blocks_per_day_top5_pool_groups(
     conn: &mut SqliteConnection,
-    pool_ids: &[i32; 5],
+    pool_groups: &[Vec<i32>; 5],
 ) -> Vec<Top5PoolBlocksPerDay> {
+    let mut all_ids = BTreeSet::new();
+    for group in pool_groups.iter() {
+        for id in group.iter() {
+            all_ids.insert(*id);
+        }
+    }
+
     sql_query(format!(
         r#"
         SELECT * FROM (
             SELECT
                 t."date",
-                COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top1_blocks,
-                COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top2_blocks,
-                COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top3_blocks,
-                COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top4_blocks,
-                COUNT(CASE WHEN pool_id = {} THEN 1 END) AS top5_blocks,
+                COUNT(CASE WHEN pool_id IN ({}) THEN 1 END) AS top1_blocks,
+                COUNT(CASE WHEN pool_id IN ({}) then 1 END) AS top2_blocks,
+                COUNT(CASE WHEN pool_id IN ({}) THEN 1 END) AS top3_blocks,
+                COUNT(CASE WHEN pool_id IN ({}) THEN 1 END) AS top4_blocks,
+                COUNT(CASE WHEN pool_id IN ({}) THEN 1 END) AS top5_blocks,
                 COALESCE(subquery.total_count, 0) AS total
             FROM block_stats t
             LEFT JOIN (
@@ -159,7 +180,7 @@ pub fn blocks_per_day_top5_pools(
                 GROUP BY "date"
             ) subquery
                 ON t."date" = subquery."date"
-            WHERE pool_id IN ({}, {}, {}, {}, {})
+            WHERE pool_id IN ({})
             GROUP BY t."date", subquery.total_count
             ORDER BY t."date" DESC
             LIMIT (356 * 6)
@@ -167,17 +188,13 @@ pub fn blocks_per_day_top5_pools(
         ORDER BY "date" ASC;
         "#,
         // ids for CASE WHEN pool_id
-        pool_ids[0],
-        pool_ids[1],
-        pool_ids[2],
-        pool_ids[3],
-        pool_ids[4],
+        vec_to_string(&pool_groups[0]),
+        vec_to_string(&pool_groups[1]),
+        vec_to_string(&pool_groups[2]),
+        vec_to_string(&pool_groups[3]),
+        vec_to_string(&pool_groups[4]),
         // ids for WHERE pool_id IN
-        pool_ids[0],
-        pool_ids[1],
-        pool_ids[2],
-        pool_ids[3],
-        pool_ids[4],
+        vec_to_string(&all_ids.iter().map(|i| *i).collect::<Vec<i32>>()),
     ))
     .get_results(conn)
     .unwrap()
