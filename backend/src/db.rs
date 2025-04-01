@@ -100,7 +100,7 @@ pub struct MiningPoolID {
     pub count: i32,
 }
 
-pub fn current_top5_mining_pools(conn: &mut SqliteConnection) -> Vec<MiningPoolID> {
+pub fn current_top_mining_pools(conn: &mut SqliteConnection) -> Vec<MiningPoolID> {
     sql_query(format!(
         r#"
         WITH recent_blocks AS (
@@ -112,8 +112,8 @@ pub fn current_top5_mining_pools(conn: &mut SqliteConnection) -> Vec<MiningPoolI
         SELECT pool_id, COUNT(*) as count
         FROM recent_blocks
         GROUP BY pool_id
-        ORDER BY count DESC
-        LIMIT 5;
+        HAVING COUNT(*) > 0
+        ORDER BY count DESC;
         "#
     ))
     .get_results(conn)
