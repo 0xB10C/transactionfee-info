@@ -88,10 +88,10 @@ pub fn top5_miningpools_csv(
 
     let pool_data = bitcoin_pool_identification::default_data(Network::Bitcoin);
 
-    let top5 = db::current_top5_mining_pools(&mut conn);
+    let top_pools = db::current_top_mining_pools(&mut conn);
     let mut pool_ids: [Vec<i32>; 5] = [vec![-1], vec![-1], vec![-1], vec![-1], vec![-1]];
     let mut pool_names: [&str; 5] = ["", "", "", "", ""];
-    for (i, top_pool) in top5.iter().enumerate() {
+    for (i, top_pool) in top_pools.iter().enumerate() {
         if i >= pool_ids.len() {
             break;
         }
