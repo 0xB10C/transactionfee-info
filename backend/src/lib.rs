@@ -313,8 +313,9 @@ pub fn write_csv_files(
     connection: Arc<Mutex<SqliteConnection>>,
 ) -> Result<(), MainError> {
     gen_csv::date_csv(csv_path, connection.clone())?;
-    gen_csv::metrics_csv(csv_path, connection.clone())?;
+    //gen_csv::metrics_csv(csv_path, connection.clone())?;
     gen_csv::top5_miningpools_csv(csv_path, connection.clone())?;
     gen_csv::antpool_and_friends_csv(csv_path, connection.clone())?;
+    gen_csv::mining_centralization_index_csv(csv_path, connection.clone())?;
     Ok(())
 }
