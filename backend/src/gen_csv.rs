@@ -18,7 +18,7 @@ const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 6] =
 // An array with pool IDs based on https://github.com/bitcoin-data/mining-pools/blob/generated/pool-list.json
 // representing the "AntPool & Friends" proxy pool group.
 // This group is based on the observed stratum jobs they sent out.
-const PROXY_POOL_GROUP_ANTPOOL: [u64; 10] = [
+pub const PROXY_POOL_GROUP_ANTPOOL: [u64; 10] = [
     61,  // AntPool
     111, // Poolin
     72,  // Ultimus Pool
@@ -31,6 +31,7 @@ const PROXY_POOL_GROUP_ANTPOOL: [u64; 10] = [
     43,  // CloverPool (formerly BTC.com)
          // When updating this list, make sure to update the following files too:
          // - frontend/content/charts/mining-pools-antpool-and-friends.md
+         // - frontend/content/mining-pools-centralization-index-with-proxy-pools.md
 ];
 
 // Generates a date.csv file with a single column with the date.
@@ -249,6 +250,40 @@ pub fn mining_centralization_index_csv(
     let mut file = std::fs::File::create(format!("{}/{}.csv", csv_path, FILENAME))?;
     file.write_all(format!("date,top1,top2,top3,top4,top5,top6,total\n",).as_bytes())?;
     let rows = db::mining_centralization_index(&mut conn);
+    let content: String = rows
+        .iter()
+        .map(|row| {
+            format!(
+                "{},{},{},{},{},{},{},{}\n",
+                row.date,
+                row.top1_count,
+                row.top2_count,
+                row.top3_count,
+                row.top4_count,
+                row.top5_count,
+                row.top6_count,
+                row.total_blocks
+            )
+        })
+        .collect();
+    file.write_all(content.as_bytes())?;
+    Ok(())
+}
+
+// Generates a miningpools-centralization-index-with-proxy-pools.csv file.
+pub fn mining_centralization_index_with_proxy_pools_csv(
+    csv_path: &str,
+    connection: Arc<Mutex<SqliteConnection>>,
+) -> Result<(), MainError> {
+    const FILENAME: &str = "miningpools-centralization-index-with-proxy-pools";
+
+    let connection = Arc::clone(&connection);
+    let mut conn = connection.lock().unwrap();
+    info!("Generating {} file...", FILENAME);
+
+    let mut file = std::fs::File::create(format!("{}/{}.csv", csv_path, FILENAME))?;
+    file.write_all(format!("date,top1,top2,top3,top4,top5,top6,total\n",).as_bytes())?;
+    let rows = db::mining_centralization_index_with_proxy_pools(&mut conn);
     let content: String = rows
         .iter()
         .map(|row| {

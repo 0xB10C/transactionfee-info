@@ -54,5 +54,3 @@ const dataType = dataTypePercentage
 yAxis.tickFormat(d3.format("~p"));
 const chartFunction = fiveLineChart
 const startDate = d3.timeParse("%Y-%m-%d")("2023-01-01")
-
-var xDomain = (d3.timeParse("%Y-%m-%d")("2023-01-01"), new Date())

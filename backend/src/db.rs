@@ -1,3 +1,4 @@
+use crate::gen_csv::PROXY_POOL_GROUP_ANTPOOL;
 use crate::schema;
 use crate::stats::{BlockStats, InputStats, OutputStats, ScriptStats, Stats, TxStats};
 use crate::MainError;
@@ -255,6 +256,56 @@ pub fn mining_centralization_index(conn: &mut SqliteConnection) -> Vec<Centraliz
         ORDER BY r.date;
         "#,
     )
+    .get_results(conn)
+    .unwrap()
+}
+
+pub fn mining_centralization_index_with_proxy_pools(
+    conn: &mut SqliteConnection,
+) -> Vec<CentralizationIndex> {
+    sql_query(format!(
+        r#"
+        WITH RankedPoolCounts AS (
+            SELECT
+                date,
+                CASE
+                    WHEN pool_id IN ({}) THEN 9999  -- group "AntPool & friends" into pool 9999
+                    ELSE pool_id  -- Keep other pools as they are
+                END AS pool_group,
+                COUNT(*) AS pool_count,
+                ROW_NUMBER() OVER (PARTITION BY date ORDER BY COUNT(*) DESC) AS rank
+            FROM block_stats
+            GROUP BY date, pool_group
+        ),
+        TotalBlocks AS (
+            SELECT
+            date,
+            COUNT(*) AS total_blocks
+            FROM block_stats
+            GROUP BY date
+        )
+        SELECT
+            r.date,
+            SUM(CASE WHEN r.rank = 1 THEN r.pool_count ELSE 0 END) AS top1_count,
+            SUM(CASE WHEN r.rank = 2 THEN r.pool_count ELSE 0 END) AS top2_count,
+            SUM(CASE WHEN r.rank = 3 THEN r.pool_count ELSE 0 END) AS top3_count,
+            SUM(CASE WHEN r.rank = 4 THEN r.pool_count ELSE 0 END) AS top4_count,
+            SUM(CASE WHEN r.rank = 5 THEN r.pool_count ELSE 0 END) AS top5_count,
+            SUM(CASE WHEN r.rank = 6 THEN r.pool_count ELSE 0 END) AS top6_count,
+            t.total_blocks
+        FROM RankedPoolCounts r
+        JOIN TotalBlocks t ON r.date = t.date
+        WHERE rank <= 6
+        GROUP BY r.date, t.total_blocks
+        ORDER BY r.date;
+        "#,
+        vec_to_string(
+            &(PROXY_POOL_GROUP_ANTPOOL
+                .iter()
+                .map(|i| *i as i32)
+                .collect::<Vec<i32>>())
+        ),
+    ))
     .get_results(conn)
     .unwrap()
 }
