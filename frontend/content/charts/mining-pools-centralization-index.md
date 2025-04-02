@@ -3,7 +3,7 @@ title: "Mining Centralization Index"
 draft: false
 author: "0xb10c"
 categories: "Mining Pools"
-categories_weight: 0
+categories_weight: 1
 tags: ["pools", "centralization"]
 thumbnail: mining-pools-centralization-index.png
 chartJS: mining-pools-centralization-index.js

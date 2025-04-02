@@ -3,7 +3,7 @@ title: "Current Top 5 Mining Pools"
 draft: false
 author: "0xb10c"
 categories: "Mining Pools"
-categories_weight: 0
+categories_weight: 1
 tags: ["pools", "top5"]
 thumbnail: mining-pools-top5-pools.png
 chartJS: mining-pools-top5-pools.js

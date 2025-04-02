@@ -310,6 +310,47 @@ pub fn mining_centralization_index_with_proxy_pools(
     .unwrap()
 }
 
+#[derive(QueryableByName)]
+pub struct PoolBlockPerDay {
+    #[diesel(sql_type = Text)]
+    pub date: String,
+    #[diesel(sql_type = BigInt)]
+    pub count: i64,
+    #[diesel(sql_type = BigInt)]
+    pub total: i64,
+}
+
+pub fn get_blocks_per_day_per_pool(
+    conn: &mut SqliteConnection,
+    id: i32,
+) -> Result<Vec<PoolBlockPerDay>, diesel::result::Error> {
+    Ok(sql_query(format!(
+        r#"
+        SELECT
+            b.date,
+            count(*) AS count,
+            t.total
+        FROM
+            block_stats b
+        JOIN (
+            SELECT
+                date,
+                count(*) AS total
+            FROM
+                block_stats
+            GROUP BY
+                date
+        ) t ON b.date = t.date
+        WHERE
+            b."pool_id" = {}
+        GROUP BY
+            b.date, t.total;
+        "#,
+        id
+    ))
+    .get_results(conn)?)
+}
+
 pub fn insert_stats(
     conn: &mut SqliteConnection,
     stats: &Vec<Stats>,

@@ -2,6 +2,7 @@ use crate::{db, db::TableInfo, MainError};
 use bitcoin::Network;
 use diesel::SqliteConnection;
 use log::info;
+use std::collections::BTreeSet;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
@@ -301,5 +302,43 @@ pub fn mining_centralization_index_with_proxy_pools_csv(
         })
         .collect();
     file.write_all(content.as_bytes())?;
+    Ok(())
+}
+
+// Generates miningpools-poolid-*.csv files with the number of blocks for this pool id per day.
+pub fn mining_pool_blocks_per_day_csv(
+    csv_path: &str,
+    connection: Arc<Mutex<SqliteConnection>>,
+) -> Result<(), MainError> {
+    let connection = Arc::clone(&connection);
+    let mut conn = connection.lock().unwrap();
+
+    // A set of interesting pool IDs based on https://github.com/bitcoin-data/mining-pools/blob/generated/pool-list.json
+    let mut pool_ids = BTreeSet::new();
+    // All "AntPool & friends" pools
+    for &item in PROXY_POOL_GROUP_ANTPOOL.iter() {
+        pool_ids.insert(item as i32);
+    }
+    pool_ids.insert(0); // Unknown
+    pool_ids.insert(88); // Foundry USA
+    pool_ids.insert(110); // ViaBTC
+    pool_ids.insert(22); // F2Pool
+    pool_ids.insert(140); // MaraPool
+    pool_ids.insert(145); // Ocean
+
+    for id in pool_ids.iter() {
+        let filename = format!("miningpools-poolid-{}", id);
+        info!("Generating {} file...", filename);
+        let mut file = std::fs::File::create(format!("{}/{}.csv", csv_path, filename))?;
+
+        file.write_all(format!("date,count,total\n",).as_bytes())?;
+        let rows = db::get_blocks_per_day_per_pool(&mut conn, *id)?;
+        let content: String = rows
+            .iter()
+            .map(|row| format!("{},{},{}\n", row.date, row.count, row.total))
+            .collect();
+        file.write_all(content.as_bytes())?;
+    }
+
     Ok(())
 }
