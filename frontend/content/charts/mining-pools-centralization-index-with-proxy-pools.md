@@ -3,8 +3,8 @@ title: "Mining Centralization Index (with proxy pools)"
 draft: false
 author: "0xb10c"
 categories: "Mining Pools"
-categories_weight: 0
-tags: ["pools", "centralization", "antpool-and-friends"]
+categories_weight: 2
+tags: ["pools", "centralization", "antpool-and-friends", "antpool"]
 thumbnail: mining-pools-centralization-index-with-proxy-pools.png
 chartJS: mining-pools-centralization-index-with-proxy-pools.js
 images:

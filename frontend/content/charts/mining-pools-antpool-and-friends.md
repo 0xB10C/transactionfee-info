@@ -3,8 +3,8 @@ title: "AntPool & Friends"
 draft: false
 author: "0xb10c"
 categories: "Mining Pools"
-categories_weight: 0
-tags: ["pools", "antpool-and-friends", "proxy-pools"]
+categories_weight: 2
+tags: ["pools", "antpool-and-friends", "proxy-pools", "antpool"]
 thumbnail: mining-pools-antpool-and-friends.png
 chartJS: mining-pools-antpool-and-friends.js
 images:
