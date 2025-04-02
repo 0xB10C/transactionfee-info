@@ -101,7 +101,9 @@ pub struct MiningPoolID {
     pub count: i32,
 }
 
-pub fn current_top_mining_pools(conn: &mut SqliteConnection) -> Vec<MiningPoolID> {
+pub fn current_top_mining_pools(
+    conn: &mut SqliteConnection,
+) -> Result<Vec<MiningPoolID>, diesel::result::Error> {
     sql_query(format!(
         r#"
         WITH recent_blocks AS (
@@ -118,7 +120,6 @@ pub fn current_top_mining_pools(conn: &mut SqliteConnection) -> Vec<MiningPoolID
         "#
     ))
     .get_results(conn)
-    .unwrap()
 }
 
 #[derive(Debug, QueryableByName)]
@@ -155,7 +156,7 @@ fn vec_to_string(ids: &[i32]) -> String {
 pub fn blocks_per_day_top5_pool_groups(
     conn: &mut SqliteConnection,
     pool_groups: &[Vec<i32>; 5],
-) -> Vec<Top5PoolBlocksPerDay> {
+) -> Result<Vec<Top5PoolBlocksPerDay>, diesel::result::Error> {
     let mut all_ids = BTreeSet::new();
     for group in pool_groups.iter() {
         for id in group.iter() {
@@ -198,7 +199,6 @@ pub fn blocks_per_day_top5_pool_groups(
         vec_to_string(&all_ids.iter().map(|i| *i).collect::<Vec<i32>>()),
     ))
     .get_results(conn)
-    .unwrap()
 }
 
 #[derive(Debug, QueryableByName)]
@@ -221,7 +221,9 @@ pub struct CentralizationIndex {
     pub total_blocks: i32,
 }
 
-pub fn mining_centralization_index(conn: &mut SqliteConnection) -> Vec<CentralizationIndex> {
+pub fn mining_centralization_index(
+    conn: &mut SqliteConnection,
+) -> Result<Vec<CentralizationIndex>, diesel::result::Error> {
     sql_query(
         r#"
         WITH RankedPoolCounts AS (
@@ -257,12 +259,11 @@ pub fn mining_centralization_index(conn: &mut SqliteConnection) -> Vec<Centraliz
         "#,
     )
     .get_results(conn)
-    .unwrap()
 }
 
 pub fn mining_centralization_index_with_proxy_pools(
     conn: &mut SqliteConnection,
-) -> Vec<CentralizationIndex> {
+) -> Result<Vec<CentralizationIndex>, diesel::result::Error> {
     sql_query(format!(
         r#"
         WITH RankedPoolCounts AS (
@@ -307,7 +308,6 @@ pub fn mining_centralization_index_with_proxy_pools(
         ),
     ))
     .get_results(conn)
-    .unwrap()
 }
 
 #[derive(QueryableByName)]
@@ -324,7 +324,7 @@ pub fn get_blocks_per_day_per_pool(
     conn: &mut SqliteConnection,
     id: i32,
 ) -> Result<Vec<PoolBlockPerDay>, diesel::result::Error> {
-    Ok(sql_query(format!(
+    sql_query(format!(
         r#"
         SELECT
             b.date,
@@ -348,7 +348,7 @@ pub fn get_blocks_per_day_per_pool(
         "#,
         id
     ))
-    .get_results(conn)?)
+    .get_results(conn)
 }
 
 pub fn insert_stats(
