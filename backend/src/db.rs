@@ -200,6 +200,65 @@ pub fn blocks_per_day_top5_pool_groups(
     .unwrap()
 }
 
+#[derive(Debug, QueryableByName)]
+pub struct CentralizationIndex {
+    #[diesel(sql_type = Text)]
+    pub date: String,
+    #[diesel(sql_type = Integer)]
+    pub top1_count: i32,
+    #[diesel(sql_type = Integer)]
+    pub top2_count: i32,
+    #[diesel(sql_type = Integer)]
+    pub top3_count: i32,
+    #[diesel(sql_type = Integer)]
+    pub top4_count: i32,
+    #[diesel(sql_type = Integer)]
+    pub top5_count: i32,
+    #[diesel(sql_type = Integer)]
+    pub top6_count: i32,
+    #[diesel(sql_type = Integer)]
+    pub total_blocks: i32,
+}
+
+pub fn mining_centralization_index(conn: &mut SqliteConnection) -> Vec<CentralizationIndex> {
+    sql_query(
+        r#"
+        WITH RankedPoolCounts AS (
+            SELECT
+                date,
+                pool_id,
+                COUNT(*) AS pool_count,
+                ROW_NUMBER() OVER (PARTITION BY date ORDER BY COUNT(*) DESC) AS rank
+            FROM block_stats
+            GROUP BY date, pool_id
+        ),
+        TotalBlocks AS (
+            SELECT
+            date,
+            COUNT(*) AS total_blocks
+            FROM block_stats
+            GROUP BY date
+        )
+        SELECT
+            r.date,
+            SUM(CASE WHEN r.rank = 1 THEN r.pool_count ELSE 0 END) AS top1_count,
+            SUM(CASE WHEN r.rank = 2 THEN r.pool_count ELSE 0 END) AS top2_count,
+            SUM(CASE WHEN r.rank = 3 THEN r.pool_count ELSE 0 END) AS top3_count,
+            SUM(CASE WHEN r.rank = 4 THEN r.pool_count ELSE 0 END) AS top4_count,
+            SUM(CASE WHEN r.rank = 5 THEN r.pool_count ELSE 0 END) AS top5_count,
+            SUM(CASE WHEN r.rank = 6 THEN r.pool_count ELSE 0 END) AS top6_count,
+            t.total_blocks
+        FROM RankedPoolCounts r
+        JOIN TotalBlocks t ON r.date = t.date
+        WHERE rank <= 6
+        GROUP BY r.date, t.total_blocks
+        ORDER BY r.date;
+        "#,
+    )
+    .get_results(conn)
+    .unwrap()
+}
+
 pub fn insert_stats(
     conn: &mut SqliteConnection,
     stats: &Vec<Stats>,
