@@ -14,3 +14,7 @@ images:
 Shows the hashrate percentage of the current top 5 mining pools.
 
 <!--more-->
+
+The data shown is based on the coinbase tags and coinbase output addresses embedded into the
+blocks by the mining pools. It's known that some smaller pools actually belong to e.g. the
+larger AntPool mining pool. This is not reflected here.
