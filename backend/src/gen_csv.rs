@@ -108,7 +108,7 @@ pub fn top5_miningpools_csv(
 
     let pool_data = bitcoin_pool_identification::default_data(Network::Bitcoin);
 
-    let top_pools = db::current_top_mining_pools(&mut conn);
+    let top_pools = db::current_top_mining_pools(&mut conn)?;
     let mut pool_ids: [Vec<i32>; 5] = [vec![-1], vec![-1], vec![-1], vec![-1], vec![-1]];
     let mut pool_names: [&str; 5] = ["", "", "", "", ""];
     for (i, top_pool) in top_pools.iter().enumerate() {
@@ -138,7 +138,7 @@ pub fn top5_miningpools_csv(
         )
         .as_bytes(),
     )?;
-    let rows = db::blocks_per_day_top5_pool_groups(&mut conn, &pool_ids);
+    let rows = db::blocks_per_day_top5_pool_groups(&mut conn, &pool_ids)?;
     let content: String = rows
         .iter()
         .map(|row| {
@@ -172,7 +172,7 @@ pub fn antpool_and_friends_csv(
 
     let pool_data = bitcoin_pool_identification::default_data(Network::Bitcoin);
 
-    let top_pools = db::current_top_mining_pools(&mut conn);
+    let top_pools = db::current_top_mining_pools(&mut conn)?;
     let mut pool_ids: [Vec<i32>; 5] = [
         PROXY_POOL_GROUP_ANTPOOL.iter().map(|i| *i as i32).collect(),
         vec![-1],
@@ -217,7 +217,7 @@ pub fn antpool_and_friends_csv(
         )
         .as_bytes(),
     )?;
-    let rows = db::blocks_per_day_top5_pool_groups(&mut conn, &pool_ids);
+    let rows = db::blocks_per_day_top5_pool_groups(&mut conn, &pool_ids)?;
     let content: String = rows
         .iter()
         .map(|row| {
@@ -250,7 +250,7 @@ pub fn mining_centralization_index_csv(
 
     let mut file = std::fs::File::create(format!("{}/{}.csv", csv_path, FILENAME))?;
     file.write_all(format!("date,top1,top2,top3,top4,top5,top6,total\n",).as_bytes())?;
-    let rows = db::mining_centralization_index(&mut conn);
+    let rows = db::mining_centralization_index(&mut conn)?;
     let content: String = rows
         .iter()
         .map(|row| {
@@ -284,7 +284,7 @@ pub fn mining_centralization_index_with_proxy_pools_csv(
 
     let mut file = std::fs::File::create(format!("{}/{}.csv", csv_path, FILENAME))?;
     file.write_all(format!("date,top1,top2,top3,top4,top5,top6,total\n",).as_bytes())?;
-    let rows = db::mining_centralization_index_with_proxy_pools(&mut conn);
+    let rows = db::mining_centralization_index_with_proxy_pools(&mut conn)?;
     let content: String = rows
         .iter()
         .map(|row| {
