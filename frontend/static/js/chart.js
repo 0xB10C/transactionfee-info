@@ -112,9 +112,15 @@ function setDescriptionRollingAverageUnit(rollingAvg) {
   }
 }
 
-function setDescriptionLegend(keys, labels, colors) {
+function setDescriptionLegend(keys, labels, colors, reverse = false) {
   d3.select("#description-legend").selectAll("*").remove();
-  for (const key of keys) {
+
+  _keys = [...keys]
+  if (reverse) {
+    _keys = _keys.reverse()
+  }
+
+  for (const key of _keys) {
     var legendElement = d3.select("#description-legend").append("span")
       .attr("class", "p-1 text-nowrap")
 
@@ -762,18 +768,7 @@ function twoLineChart() {
 function fiveLineChart() {
   // defaults
   keys = ["y1", "y2", "y3", "y4", "y5"]
-  colors = {"y1": colorBLUE, "y2": colorORANGE, "y3": colorPURPLE, "y4": colorYELLOW, "y5": colorAQUA}
-
-  const colorOPRETURN = colorLIME
-const colorP2PK = colorGRAY
-const colorP2PKH = colorRED
-const colorNestedP2WPKH = colorAQUA
-const colorP2WPKH = colorPURPLE
-const colorP2MS = colorNAVY
-const colorP2SH = colorYELLOW
-const colorNestedP2WSH = colorORANGE
-const colorP2WSH = colorBLUE
-const colorP2TR = colorMAROON
+  colors = {"y5": colorBLUE, "y4": colorORANGE, "y3": colorPURPLE, "y2": colorYELLOW, "y1": colorAQUA}
 
   data = movingAverage(preProcessedData, currentRollingAverage, keys)
 
@@ -836,7 +831,7 @@ const colorP2TR = colorMAROON
     .x(d => xScaledValue(d))
     .y(d => d.y)
 
-  setDescriptionLegend(keys, labels, colors)
+  setDescriptionLegend(keys, labels, colors, true)
 
   xScale.domain(d3.extent(data, d => xValue(d)));
   yScale.domain(d3.extent(data, d => yValue5(d)));

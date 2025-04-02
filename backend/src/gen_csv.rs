@@ -15,6 +15,24 @@ const METRIC_TABLES: [&str; 5] = [
 const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 6] =
     ["height", "date", "version", "nonce", "bits", "pool_id"];
 
+// An array with pool IDs based on https://github.com/bitcoin-data/mining-pools/blob/generated/pool-list.json
+// representing the "AntPool & Friends" proxy pool group.
+// This group is based on the observed stratum jobs they sent out.
+const PROXY_POOL_GROUP_ANTPOOL: [u64; 10] = [
+    61,  // AntPool
+    111, // Poolin
+    72,  // Ultimus Pool
+    119, // Braiins
+    146, // SecPool
+    48,  // SigmaPool
+    123, // Binance Pool
+    136, // Rawpool
+    4,   // Luxor
+    43,  // CloverPool (formerly BTC.com)
+         // When updating this list, make sure to update the following files too:
+         // - frontend/content/charts/mining-pools-antpool-and-friends.md
+];
+
 // Generates a date.csv file with a single column with the date.
 // To be used together with other metric CSV files.
 pub fn date_csv(csv_path: &str, connection: Arc<Mutex<SqliteConnection>>) -> Result<(), MainError> {
@@ -101,6 +119,85 @@ pub fn top5_miningpools_csv(
                 pool_names[i] = &pool.name;
                 break;
             }
+        }
+    }
+
+    let mut file = std::fs::File::create(format!("{}/{}.csv", csv_path, FILENAME))?;
+    file.write_all(
+        format!(
+            "{},{},{},{},{},{},{}\n",
+            "date",
+            pool_names[0],
+            pool_names[1],
+            pool_names[2],
+            pool_names[3],
+            pool_names[4],
+            "total"
+        )
+        .as_bytes(),
+    )?;
+    let rows = db::blocks_per_day_top5_pool_groups(&mut conn, &pool_ids);
+    let content: String = rows
+        .iter()
+        .map(|row| {
+            format!(
+                "{},{},{},{},{},{},{}\n",
+                row.date,
+                row.top1_blocks,
+                row.top2_blocks,
+                row.top3_blocks,
+                row.top4_blocks,
+                row.top5_blocks,
+                row.total
+            )
+        })
+        .collect();
+    file.write_all(content.as_bytes())?;
+    Ok(())
+}
+
+// Generates a miningpools-antpool-and-friends.csv file with the current top5
+// pool groups and including "AntPool and Friends".
+pub fn antpool_and_friends_csv(
+    csv_path: &str,
+    connection: Arc<Mutex<SqliteConnection>>,
+) -> Result<(), MainError> {
+    const FILENAME: &str = "miningpools-antpool-and-friends";
+
+    let connection = Arc::clone(&connection);
+    let mut conn = connection.lock().unwrap();
+    info!("Generating {} file...", FILENAME);
+
+    let pool_data = bitcoin_pool_identification::default_data(Network::Bitcoin);
+
+    let top_pools = db::current_top_mining_pools(&mut conn);
+    let mut pool_ids: [Vec<i32>; 5] = [
+        PROXY_POOL_GROUP_ANTPOOL.iter().map(|i| *i as i32).collect(),
+        vec![-1],
+        vec![-1],
+        vec![-1],
+        vec![-1],
+    ];
+    let mut pool_names: [&str; 5] = ["AntPool & friends", "", "", "", ""];
+    let mut pools_added = 1;
+
+    for top_pool in top_pools.iter() {
+        if pools_added >= pool_ids.len() {
+            break;
+        }
+        if PROXY_POOL_GROUP_ANTPOOL.contains(&(top_pool.pool_id as u64)) {
+            // We already added the "antpool and friends" group,
+            // don't add pools of this group again. Skip them.
+            continue;
+        } else {
+            pool_ids[pools_added] = vec![top_pool.pool_id];
+            for pool in pool_data.iter().rev() {
+                if top_pool.pool_id == pool.id as i32 {
+                    pool_names[pools_added] = &pool.name;
+                    break;
+                }
+            }
+            pools_added += 1;
         }
     }
 
