@@ -214,21 +214,21 @@ impl BlockStats {
                 .to_wu() as i64,
 
             transactions: block.txdata.len() as i32,
-            payments: tx_infos.iter().map(|ti| ti.payments).sum::<u32>() as i32,
+            payments: tx_infos.iter().map(|ti| ti.payments()).sum::<u32>() as i32,
             payments_segwit_spending_tx: tx_infos
                 .iter()
                 .filter(|ti| ti.is_spending_segwit())
-                .map(|ti| ti.payments)
+                .map(|ti| ti.payments())
                 .sum::<u32>() as i32,
             payments_taproot_spending_tx: tx_infos
                 .iter()
                 .filter(|ti| ti.is_spending_taproot())
-                .map(|ti| ti.payments)
+                .map(|ti| ti.payments())
                 .sum::<u32>() as i32,
             payments_signaling_explicit_rbf: tx_infos
                 .iter()
                 .filter(|ti| ti.is_signaling_explicit_rbf_replicability())
-                .map(|ti| ti.payments)
+                .map(|ti| ti.payments())
                 .sum::<u32>() as i32,
 
             inputs: block.txdata.iter().map(|tx| tx.input.len()).sum::<usize>() as i32,
@@ -878,10 +878,10 @@ mod tests {
                 coinbase_output_amount: 313534642,
                 coinbase_weight: 784,
                 transactions: 74,
-                payments: 114, // FIXME: this is incorrect! but the fix is out of scope here.
-                payments_segwit_spending_tx: 103,
-                payments_taproot_spending_tx: 77,
-                payments_signaling_explicit_rbf: 99,
+                payments: 74,
+                payments_segwit_spending_tx: 65,
+                payments_taproot_spending_tx: 51,
+                payments_signaling_explicit_rbf: 65,
                 inputs: 17210,
                 outputs: 114,
                 // This block was mined by MaraPool which has the ID 140
@@ -1045,10 +1045,10 @@ mod tests {
                 coinbase_output_amount: 626983001,
                 coinbase_weight: 1272,
                 transactions: 645,
-                payments: 1882,
-                payments_segwit_spending_tx: 1720,
-                payments_taproot_spending_tx: 2,
-                payments_signaling_explicit_rbf: 457,
+                payments: 1406,
+                payments_segwit_spending_tx: 1307,
+                payments_taproot_spending_tx: 1,
+                payments_signaling_explicit_rbf: 280,
                 inputs: 2170,
                 outputs: 1882,
                 // This block was mined by Binance Pool which has the ID 123
@@ -1212,7 +1212,7 @@ mod tests {
                 coinbase_output_amount: 2503687509,
                 coinbase_weight: 408,
                 transactions: 277,
-                payments: 591,
+                payments: 345,
                 payments_segwit_spending_tx: 0,
                 payments_taproot_spending_tx: 0,
                 payments_signaling_explicit_rbf: 0,
