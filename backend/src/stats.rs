@@ -4,7 +4,8 @@ use chrono::DateTime;
 use diesel::prelude::*;
 use log::{debug, error};
 use rawtx_rs::{
-    input::InputType, output::OutputType, script::DEREncoding, script::SignatureType, tx::TxInfo,
+    input::InputType, output::OpReturnFlavor, output::OutputType, script::DEREncoding,
+    script::SignatureType, tx::TxInfo,
 };
 use std::{collections::HashSet, error, fmt, num::ParseIntError};
 
@@ -664,6 +665,16 @@ pub struct OutputStats {
     outputs_p2a_amount: i64,
     outputs_opreturn_amount: i64,
     outputs_unknown_amount: i64,
+
+    outputs_opreturn_omnilayer: i32,
+    outputs_opreturn_stacks_block_commit: i32,
+    outputs_opreturn_bip47_payment_code: i32,
+    outputs_opreturn_coinbase_rsk: i32,
+    outputs_opreturn_coinbase_coredao: i32,
+    outputs_opreturn_coinbase_exsat: i32,
+    outputs_opreturn_coinbase_hathor: i32,
+    outputs_opreturn_coinbase_witness_commitment: i32,
+    outputs_opreturn_runestone: i32,
 }
 
 impl OutputStats {
@@ -674,6 +685,7 @@ impl OutputStats {
         s.height = height;
         s.date = date;
 
+        let mut is_coinbase = true;
         for (_, tx_info) in block.txdata.iter().zip(tx_infos.iter()) {
             for output in tx_info.output_infos.iter() {
                 match output.out_type {
@@ -713,9 +725,41 @@ impl OutputStats {
                             s.outputs_p2a_dust += 1;
                         }
                     }
-                    OutputType::OpReturn(_) => {
+                    OutputType::OpReturn(flavor) => {
                         s.outputs_opreturn += 1;
                         s.outputs_opreturn_amount += output.value.to_sat() as i64;
+                        match flavor {
+                            OpReturnFlavor::Runestone => s.outputs_opreturn_runestone += 1,
+                            OpReturnFlavor::Omni => s.outputs_opreturn_omnilayer += 1,
+                            OpReturnFlavor::StacksBlockCommit => {
+                                s.outputs_opreturn_stacks_block_commit += 1
+                            }
+                            OpReturnFlavor::Bip47PaymentCode => {
+                                s.outputs_opreturn_bip47_payment_code += 1
+                            }
+                            OpReturnFlavor::RSKBlock => {
+                                s.outputs_opreturn_coinbase_rsk += if is_coinbase { 1 } else { 0 }
+                            }
+                            OpReturnFlavor::CoreDao => {
+                                s.outputs_opreturn_coinbase_coredao +=
+                                    if is_coinbase { 1 } else { 0 }
+                            }
+                            OpReturnFlavor::ExSat => {
+                                s.outputs_opreturn_coinbase_exsat += if is_coinbase { 1 } else { 0 }
+                            }
+                            OpReturnFlavor::HathorNetwork => {
+                                s.outputs_opreturn_coinbase_hathor +=
+                                    if is_coinbase { 1 } else { 0 }
+                            }
+                            OpReturnFlavor::WitnessCommitment => {
+                                s.outputs_opreturn_coinbase_witness_commitment +=
+                                    if is_coinbase { 1 } else { 0 }
+                            }
+                            OpReturnFlavor::Len1Byte => (), // TODO: not implemented yet
+                            OpReturnFlavor::Len20Byte => (), // TODO: not implemented yet
+                            OpReturnFlavor::Len80Byte => (), // TODO: not implemented yet
+                            OpReturnFlavor::Unspecified => (), // we don't know
+                        }
                     }
                     OutputType::Unknown => {
                         s.outputs_unknown += 1;
@@ -723,6 +767,7 @@ impl OutputStats {
                     }
                 }
             }
+            is_coinbase = false;
         }
         s
     }
@@ -928,6 +973,15 @@ mod tests {
                 outputs_p2a_amount: 0,
                 outputs_opreturn_amount: 0,
                 outputs_unknown_amount: 0,
+                outputs_opreturn_bip47_payment_code: 0,
+                outputs_opreturn_coinbase_coredao: 0,
+                outputs_opreturn_coinbase_exsat: 0,
+                outputs_opreturn_coinbase_hathor: 0,
+                outputs_opreturn_coinbase_rsk: 1,
+                outputs_opreturn_coinbase_witness_commitment: 1,
+                outputs_opreturn_omnilayer: 0,
+                outputs_opreturn_runestone: 0,
+                outputs_opreturn_stacks_block_commit: 6,
             },
             script: ScriptStats {
                 height: 739990,
@@ -1086,6 +1140,15 @@ mod tests {
                 outputs_p2a_amount: 0,
                 outputs_opreturn_amount: 0,
                 outputs_unknown_amount: 0,
+                outputs_opreturn_bip47_payment_code: 0,
+                outputs_opreturn_coinbase_coredao: 0,
+                outputs_opreturn_coinbase_exsat: 0,
+                outputs_opreturn_coinbase_hathor: 0,
+                outputs_opreturn_coinbase_rsk: 0,
+                outputs_opreturn_coinbase_witness_commitment: 0,
+                outputs_opreturn_omnilayer: 0,
+                outputs_opreturn_runestone: 0,
+                outputs_opreturn_stacks_block_commit: 0,
             },
             script: ScriptStats {
                 height: 361582,
