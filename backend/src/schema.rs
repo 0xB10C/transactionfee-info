@@ -140,6 +140,15 @@ diesel::table! {
         outputs_p2a -> Integer,
         outputs_p2a_amount -> BigInt,
         outputs_p2a_dust -> Integer,
+        outputs_opreturn_omnilayer -> Integer,
+        outputs_opreturn_stacks_block_commit -> Integer,
+        outputs_opreturn_bip47_payment_code -> Integer,
+        outputs_opreturn_coinbase_rsk -> Integer,
+        outputs_opreturn_coinbase_coredao -> Integer,
+        outputs_opreturn_coinbase_exsat -> Integer,
+        outputs_opreturn_coinbase_hathor -> Integer,
+        outputs_opreturn_coinbase_witness_commitment -> Integer,
+        outputs_opreturn_runestone -> Integer,
     }
 }
 
