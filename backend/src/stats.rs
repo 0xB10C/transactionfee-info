@@ -1,4 +1,4 @@
-use bitcoin::{Network, Transaction, Txid};
+use bitcoin::{error::UnprefixedHexError, CompactTarget, Network, Target, Transaction, Txid};
 use bitcoin_pool_identification::{default_data, Pool, PoolIdentification};
 use chrono::DateTime;
 use diesel::prelude::*;
@@ -19,6 +19,7 @@ pub enum StatsError {
     TxInfoError(rawtx_rs::tx::TxInfoError),
     BitcoinEncodeError(bitcoin::consensus::encode::Error),
     ParseIntError(ParseIntError),
+    UnprefixedHexError(UnprefixedHexError),
 }
 
 impl fmt::Display for StatsError {
@@ -27,6 +28,7 @@ impl fmt::Display for StatsError {
             StatsError::TxInfoError(e) => write!(f, "Bitcoin Script Error: {:?}", e),
             StatsError::BitcoinEncodeError(e) => write!(f, "Bitcoin Encode Error: {:?}", e),
             StatsError::ParseIntError(e) => write!(f, "Parse Int Error: {:?}", e),
+            StatsError::UnprefixedHexError(e) => write!(f, "Unprefixed Hex Error: {:?}", e),
         }
     }
 }
@@ -37,6 +39,7 @@ impl error::Error for StatsError {
             StatsError::TxInfoError(ref e) => Some(e),
             StatsError::BitcoinEncodeError(ref e) => Some(e),
             StatsError::ParseIntError(ref e) => Some(e),
+            StatsError::UnprefixedHexError(ref e) => Some(e),
         }
     }
 }
@@ -56,6 +59,12 @@ impl From<bitcoin::consensus::encode::Error> for StatsError {
 impl From<ParseIntError> for StatsError {
     fn from(e: ParseIntError) -> Self {
         StatsError::ParseIntError(e)
+    }
+}
+
+impl From<UnprefixedHexError> for StatsError {
+    fn from(e: UnprefixedHexError) -> Self {
+        StatsError::UnprefixedHexError(e)
     }
 }
 
@@ -117,6 +126,12 @@ pub struct BlockStats {
     pub version: i32,
     pub nonce: i32,
     pub bits: i32,
+    /// Low-presision block difficulty. Stored as i64 as SQLite doesn't support
+    /// f64 nor u128.
+    pub difficulty: i64,
+    /// Low-presision log2(work) for this block. Not to be confused with Bitcoin Core's cumulative log2_work
+    /// for a block at a given height. This one is not cumulative.
+    pub log2_work: f32,
 
     /// the size of the block in bytes
     pub size: i64,
@@ -183,13 +198,16 @@ impl BlockStats {
             }
         };
 
+        let target = Target::from_compact(CompactTarget::from_unprefixed_hex(&block.bits)?);
+
         Ok(BlockStats {
             height: height,
             date: date.to_string(),
             version: block.version.to_consensus(),
             nonce: block.nonce as i32,
             bits: i32::from_str_radix(&block.bits, 16)?,
-
+            difficulty: target.difficulty_float() as i64,
+            log2_work: target.to_work().log2() as f32,
             pool_id,
 
             size: block.size,
@@ -870,6 +888,8 @@ mod tests {
                 version: 0x24cda000,
                 nonce: 0x03a672d8,
                 bits: 0x17028281,
+                difficulty: 112149504190349,
+                log2_work: 78.67244,
                 size: 1858801,
                 stripped_size: 711367,
                 vsize: 998170,
@@ -1037,6 +1057,8 @@ mod tests {
                 version: 0x20000000,
                 nonce: 0x33ca7510,
                 bits: 0x17094b6a,
+                difficulty: 30283293547736,
+                log2_work: 76.78361,
                 size: 536844,
                 stripped_size: 225535,
                 vsize: 303595,
@@ -1204,6 +1226,8 @@ mod tests {
                 version: 2,
                 nonce: 0x444386f8,
                 bits: 0x18162043,
+                difficulty: 49692386354,
+                log2_work: 67.532326,
                 size: 163491,
                 stripped_size: 163491,
                 vsize: 163408,

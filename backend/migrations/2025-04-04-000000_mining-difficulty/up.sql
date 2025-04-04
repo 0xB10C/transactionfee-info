@@ -1,0 +1,5 @@
+ALTER TABLE block_stats
+  ADD COLUMN difficulty BIGINT NOT NULL DEFAULT (0);
+
+ALTER TABLE block_stats
+  ADD COLUMN log2_work REAL NOT NULL DEFAULT (0);
