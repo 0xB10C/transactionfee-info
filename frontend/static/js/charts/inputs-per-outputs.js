@@ -13,7 +13,7 @@ function preprocess(data) {
     const y = parseFloat(data[1][i].inputs_sum) / parseFloat(data[2][i].outputs_sum)
     combinedData.push({date, y})
   }
-  
+
   return combinedData
 }
 
@@ -40,7 +40,7 @@ function lineWithAreaChartInputsPerOutputsSpecial() {
 
   focus.selectAll("*").remove();
   context.selectAll("*").remove();
-  
+
   focus.append("clipPath")
     .attr("id", "chart-clip")
     .append("rect")
@@ -186,7 +186,7 @@ function lineWithAreaChartInputsPerOutputsSpecial() {
 
     // update the current date variables
     currentStartDate = xScale.domain()[0]
-    currentEndDate = xScale.domain()[1] 
+    currentEndDate = xScale.domain()[1]
 
     focus.select(".line").attr("d", line);
     focus.select(".area").attr("d", area);

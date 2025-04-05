@@ -9,6 +9,8 @@ const dataTypePercentage = 0
 const dataTypeInteger = 1
 const dataTypeFloat = 2
 const dataTypePercentagePrecise = 3
+const dataTypeMetric = 4
+const dataTypeFloatMinutes = 5
 
 const colorNAVY = "#001f3f"
 const colorBLUE = "#0074D9"
@@ -54,6 +56,7 @@ const annotationBlockchainComSegwit = {'text': 'Blockchain.com wallet supports S
 const annotationTaprootLockedIn = {'text': 'Taproot soft-fork locked-in', 'date': '2021-06-12'}
 const annotationTaprootActivated = {'text': 'Taproot soft-fork activated', 'date': '2021-11-14'}
 const annotationBitcoinCore23 = {'text': 'Bitcoin Core v23 released', 'date': '2022-04-25'}
+const annotationChinaMiningBan = {'text': 'China mining ban', 'date': '2021-05-21'}
 
 
 const DAYS31 = 2678400000
@@ -1147,6 +1150,12 @@ function formatTooltip(d){
           break;
         case dataTypeInteger:
           tooltipTableInner += formatTooltipTableRow(labels[key], d3.format(".0f")(d[key]) + " " + unit, d3.color(colors[key]).copy({opacity: 0.6}))
+          break;
+        case dataTypeMetric:
+          tooltipTableInner += formatTooltipTableRow(labels[key], d3.format("~s")(d[key]) + "" + unit, d3.color(colors[key]).copy({opacity: 0.6}))
+          break;
+        case dataTypeFloatMinutes:
+          tooltipTableInner += formatTooltipTableRow(labels[key], d3.utcFormat("%M:%S")(d[key] * 60 * 1000) + "   " + unit, d3.color(colors[key]).copy({opacity: 0.6}))
           break;
         case dataTypeFloat:
           tooltipTableInner += formatTooltipTableRow(labels[key], d3.format(".2f")(d[key]) + " " + unit, d3.color(colors[key]).copy({opacity: 0.6}))
