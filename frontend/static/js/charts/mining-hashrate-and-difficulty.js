@@ -2,21 +2,29 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/payments_sum.csv"),
-  d3.csv("/csv/size_avg.csv"),
+  d3.csv("/csv/difficulty_avg.csv"),
+  d3.csv("/csv/inputs_coinbase_sum.csv"),
+  d3.csv("/csv/inputs_witness_coinbase_sum.csv"),
 ];
 
+
 /*------------------------------------------------------------------------------
-  The Payments per block-size chart is a special case, because uses two y-axis.
-  One for the number of Payments and one for the block-size.
+  The hashrate and difficulty chart is a special case, because uses two y-axis.
 ------------------------------------------------------------------------------*/
 
 function preprocess(data) {
-  combinedData = []
+  let combinedData = []
+  const minutes_per_day = 24 * 60
+  const twoToThe32 = 2 ** 32;
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y1 = parseFloat(data[1][i].payments_sum)
-    const y2 = parseFloat(data[2][i].size_avg) / 1000
+    const blocks_per_day = (parseFloat(data[2][i].inputs_coinbase_sum) + parseFloat(data[3][i].inputs_witness_coinbase_sum))
+    const difficulty = parseFloat(data[1][i].difficulty_avg)
+    const block_time_minutes = minutes_per_day / blocks_per_day
+    const block_time_seconds = block_time_minutes * 60
+    const hashrate = Math.trunc((twoToThe32 * difficulty) / block_time_seconds)
+    const y1 = hashrate
+    const y2 = difficulty
     combinedData.push({date, y1, y2})
   }
   return combinedData
@@ -24,13 +32,13 @@ function preprocess(data) {
 
 const keys = ["y1", "y2"]
 const colors = {"y1": colorBLUE, "y2": colorGRAY}
-const labels = {"y1": "Payments", "y2": "Block size in KB"}
-const dataType = dataTypeInteger
-const annotations = [annotationSegWitActivated]
+const labels = {"y1": "Hashrate in H/s", "y2": "Difficulty"}
+const dataType = dataTypeMetric
+const annotations = [annotationChinaMiningBan]
 const unit = ""
 
 const chartFunction = twoYAxisChartSpecial;
-
+const startDate = d3.timeParse("%Y-%m-%d")("2017-07-01")
 
 function twoYAxisChartSpecial() {
 
@@ -47,7 +55,6 @@ function twoYAxisChartSpecial() {
   var y2Scale = d3.scaleLinear().range([height, 0]);
   var yAxisRight = d3.axisLeft(y2Scale);
 
-  yAxisRight.tickFormat(d3.format(".2s"));
   yAxisRight.tickFormat(d3.format(".2s"));
 
   // functions for x and y values
@@ -191,7 +198,7 @@ function twoYAxisChartSpecial() {
     let i = bisectDate(data, x0, 1)
     let d0 = data[i - 1],
         d1 = data[i],
-        d = x0 - d0.year > d1.year - x0 ? d1 : d0;
+        d = x0 - d0.date > d1.date - x0 ? d1 : d0;
 
     let doc = document.documentElement;
     let left = (window.pageXOffset || doc.scrollLeft) - (doc.clientLeft || 0);
