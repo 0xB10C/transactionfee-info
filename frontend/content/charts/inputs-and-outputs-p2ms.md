@@ -2,7 +2,7 @@
 title: "P2MS Inputs and Outputs"
 draft: false
 author: "0xb10c"
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 categories_weight: 14
 tags: [P2MS, Multisig]
 thumbnail: inputs-and-outputs-p2ms.png

@@ -2,7 +2,7 @@
 title: "P2WSHv0 Inputs and Outputs"
 draft: false
 author: "0xb10c"
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 categories_weight: 12
 tags: [P2WSHv0, "Pay-to-Script-Hash"]
 thumbnail: inputs-and-outputs-p2wshv0.png

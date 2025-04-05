@@ -2,9 +2,9 @@
 title: "Inputs and Outputs"
 draft: false
 author: "0xb10c"
-aliases: 
+aliases:
     - /charts/payments/inputsAndOutputs
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 position: 1
 tags: [Inputs, Outputs]
 thumbnail: inputs-and-outputs.png

@@ -2,7 +2,7 @@
 title: "P2PK Inputs and Outputs"
 draft: false
 author: "0xb10c"
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 categories_weight: 13
 tags: [P2PK, "Pay-to-PubKey-Family"]
 thumbnail: inputs-and-outputs-p2pk.png
