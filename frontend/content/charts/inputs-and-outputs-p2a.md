@@ -2,7 +2,7 @@
 title: "P2A Inputs and Outputs"
 draft: false
 author: "0xb10c"
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 categories_weight: 13
 tags: [P2A, "Pay-to-Anchor"]
 thumbnail: inputs-and-outputs-p2a.png

@@ -2,7 +2,7 @@
 title: "P2SH Inputs and Outputs"
 draft: false
 author: "0xb10c"
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 categories_weight: 10
 tags: [P2SH, "Pay-to-Script-Hash"]
 thumbnail: inputs-and-outputs-p2sh.png

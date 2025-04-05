@@ -2,9 +2,9 @@
 title: "Inputs per Outputs"
 draft: false
 author: "0xb10c"
-aliases: 
+aliases:
     - /charts/payments/inputsPerOutputs
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 position: 2
 tags: [Inputs, Outputs]
 thumbnail: inputs-per-outputs.png

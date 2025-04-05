@@ -2,7 +2,7 @@
 title: "Native SegWit v0 Inputs and Outputs"
 draft: false
 author: "0xb10c"
-categories: Inputs & Outputs
+categories: Inputs and Outputs
 categories_weight: 0
 tags: [SegWit]
 thumbnail: inputs-and-outputs-native-segwit-v0.png

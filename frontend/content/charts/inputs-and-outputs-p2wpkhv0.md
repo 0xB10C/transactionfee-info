@@ -2,7 +2,7 @@
 title: "P2WPKHv0 Inputs and Outputs"
 draft: false
 author: "0xb10c"
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 categories_weight: 11
 tags: [P2WPKHv0, "Pay-to-PubKey-Family"]
 thumbnail: inputs-and-outputs-p2wpkhv0.png

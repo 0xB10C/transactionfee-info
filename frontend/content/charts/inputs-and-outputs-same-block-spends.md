@@ -2,7 +2,7 @@
 title: "Inputs spending UTXOs created in the same Block"
 draft: false
 author: "0xb10c"
-categories: "Inputs & Outputs"
+categories: "Inputs and Outputs"
 position: 3
 tags: ["Block", "UTXO"]
 thumbnail: inputs-and-outputs-same-block-spends.png
