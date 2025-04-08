@@ -2,15 +2,14 @@ const chartRollingAverage = 7
 
 const CSVs = [
   d3.csv("/csv/date.csv"),
-  d3.csv("/csv/inputs_coinbase_sum.csv"),
-  d3.csv("/csv/inputs_witness_coinbase_sum.csv"),
+  d3.csv("/csv/block_count_sum.csv"),
 ]
 
 function preprocess(data) {
   let combinedData = []
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const blocks_per_day = (parseFloat(data[1][i].inputs_coinbase_sum) + parseFloat(data[2][i].inputs_witness_coinbase_sum))
+    const blocks_per_day = parseFloat(data[1][i].block_count_sum)
     const minutes_per_day = 24 * 60
     const y = minutes_per_day / blocks_per_day
     combinedData.push({date, y})
