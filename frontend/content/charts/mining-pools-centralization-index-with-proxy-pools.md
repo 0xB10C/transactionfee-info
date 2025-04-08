@@ -41,3 +41,4 @@ Pools currently assumed to be part of the "AntPool & friends" group are:
 - Rawpool
 - Luxor
 - CloverPool (formerly BTC.com)
+- Mining Squared
