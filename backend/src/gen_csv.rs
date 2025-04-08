@@ -19,7 +19,7 @@ const COLUMN_NAMES_THAT_ARENT_METRICS: [&str; 6] =
 // An array with pool IDs based on https://github.com/bitcoin-data/mining-pools/blob/generated/pool-list.json
 // representing the "AntPool & Friends" proxy pool group.
 // This group is based on the observed stratum jobs they sent out.
-pub const PROXY_POOL_GROUP_ANTPOOL: [u64; 10] = [
+pub const PROXY_POOL_GROUP_ANTPOOL: [u64; 11] = [
     61,  // AntPool
     111, // Poolin
     72,  // Ultimus Pool
@@ -30,9 +30,10 @@ pub const PROXY_POOL_GROUP_ANTPOOL: [u64; 10] = [
     136, // Rawpool
     4,   // Luxor
     43,  // CloverPool (formerly BTC.com)
+    152, // Mining Squared
          // When updating this list, make sure to update the following files too:
          // - frontend/content/charts/mining-pools-antpool-and-friends.md
-         // - frontend/content/mining-pools-centralization-index-with-proxy-pools.md
+         // - frontend/content/charts/mining-pools-centralization-index-with-proxy-pools.md
 ];
 
 // Generates a date.csv file with a single column with the date.
