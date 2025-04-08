@@ -3,8 +3,7 @@ const chartRollingAverage = 7
 const CSVs = [
   d3.csv("/csv/date.csv"),
   d3.csv("/csv/difficulty_avg.csv"),
-  d3.csv("/csv/inputs_coinbase_sum.csv"),
-  d3.csv("/csv/inputs_witness_coinbase_sum.csv"),
+  d3.csv("/csv/block_count_sum.csv"),
 ];
 
 
@@ -18,8 +17,8 @@ function preprocess(data) {
   const twoToThe32 = 2 ** 32;
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const blocks_per_day = (parseFloat(data[2][i].inputs_coinbase_sum) + parseFloat(data[3][i].inputs_witness_coinbase_sum))
     const difficulty = parseFloat(data[1][i].difficulty_avg)
+    const blocks_per_day = parseFloat(data[2][i].block_count_sum)
     const block_time_minutes = minutes_per_day / blocks_per_day
     const block_time_seconds = block_time_minutes * 60
     const hashrate = Math.trunc((twoToThe32 * difficulty) / block_time_seconds)

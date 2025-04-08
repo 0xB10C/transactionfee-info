@@ -3,8 +3,7 @@ const chartRollingAverage = 1
 const CSVs = [
   d3.csv("/csv/date.csv"),
   d3.csv("/csv/log2_work_avg.csv"),
-  d3.csv("/csv/inputs_coinbase_sum.csv"),
-  d3.csv("/csv/inputs_witness_coinbase_sum.csv"),
+  d3.csv("/csv/block_count_sum.csv"),
 ]
 
 function preprocess(data) {
@@ -13,7 +12,7 @@ function preprocess(data) {
   for (let i = 0; i < data[0].length; i++) {
     const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
     const log2_work = parseFloat(data[1][i].log2_work_avg)
-    const blocks_per_day = (parseFloat(data[2][i].inputs_coinbase_sum) + parseFloat(data[3][i].inputs_witness_coinbase_sum))
+    const blocks_per_day = parseFloat(data[2][i].block_count_sum)
     cumulative_work += BigInt(Math.round(2 ** log2_work) * blocks_per_day)
     const y = Number(cumulative_work)
     combinedData.push({date, y})
