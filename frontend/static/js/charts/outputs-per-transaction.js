@@ -1,30 +1,25 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = []
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "Outputs"
+const PRECISION = 2
+let START_DATE =  new Date("2016");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/outputs_sum.csv"),
-  d3.csv("/csv/transactions_sum.csv")
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/outputs_sum.csv"),
+  fetchCSV("/csv/transactions_sum.csv")
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = data[1][i].outputs_sum / data[2][i].transactions_sum
-    combinedData.push({date, y})
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const y = input[1][i].outputs_sum / input[2][i].transactions_sum
+    data.y.push(y)
   }
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")("2011-01-01")
-const annotations = [ ]
-const labels = {"y": "Outputs per Transaction"}
-const dataType = dataTypeFloat
-const unit = ""
-
-yAxis.tickFormat(d3.format(".1f"));
-
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

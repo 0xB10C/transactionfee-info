@@ -1,28 +1,33 @@
-const chartRollingAverage = 1
+const ANNOTATIONS = [annotationChinaMiningBan]
+const MOVING_AVERAGE_DAYS = 1
+const NAME = "work"
+const PRECISION = 0
+let START_DATE =  new Date("2009-01-01");
+const UNIT = "H"
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/log2_work_avg.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/log2_work_avg.csv"),
 ]
 
-function preprocess(data) {
-  let combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const log2_work = parseFloat(data[1][i].log2_work_avg)
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const log2_work = parseFloat(input[1][i].log2_work_avg)
     const y = 2 ** log2_work;
-    combinedData.push({date, y})
+    data.y.push(y)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = [annotationChinaMiningBan]
-const labels = {"y": "work"}
-const dataType = dataTypeMetric
-const unit = ""
+function chartDefinition(d) {
+  const EXTRA = {
+    tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
+    yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
+  }
+  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  return {...option, ...EXTRA};
+}
 
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-const chartFunction = lineWithAreaChart
-const startDate = d3.timeParse("%Y-%m-%d")("2009-01-03")
+

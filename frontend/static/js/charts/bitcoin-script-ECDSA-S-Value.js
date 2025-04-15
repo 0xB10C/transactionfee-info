@@ -1,38 +1,35 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationBitcoinCorev0_9, annotationBitcoinCorev0_11_1]
+const MOVING_AVERAGE_DAYS = 31
+const NAMES = ["low S", "high S"]
+const PRECISION = 1
+let START_DATE =  new Date("2011");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/sigs_ecdsa_low_s_sum.csv"),
-  d3.csv("/csv/sigs_ecdsa_high_s_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/sigs_ecdsa_low_s_sum.csv"),
+  fetchCSV("/csv/sigs_ecdsa_high_s_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const lowS = parseFloat(data[1][i].sigs_ecdsa_low_s_sum)
-    const highS = parseFloat(data[2][i].sigs_ecdsa_high_s_sum)
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: [], y3: [], y4: [], y5: [], y6: [], y7: []}
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+
+    const lowS = parseFloat(input[1][i].sigs_ecdsa_low_s_sum)
+    const highS = parseFloat(input[2][i].sigs_ecdsa_high_s_sum)
 
     const total = lowS + highS
 
     const lowS_percentage = lowS / total || 0
     const highS_percentage = highS / total || 0
 
-    const filler = total == 0 ? 1 : 0
-
-    combinedData.push({date, lowS_percentage, highS_percentage, filler})
+    data.y1.push(lowS_percentage * 100)
+    data.y2.push(highS_percentage * 100)
   }
-
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")("2013-01-01")
-const annotations = [annotationBitcoinCorev0_9, annotationBitcoinCorev0_11_1]
-const labels = {"lowS_percentage": "low-S", "highS_percentage": "high-S"}
-const dataType = dataTypePercentage
-const unit = ""
-
-var keys = ["lowS_percentage", "highS_percentage"]
-var colors = {"lowS_percentage":  colorBLUE, "highS_percentage": colorYELLOW}
-
-const chartFunction = stackedAreaChart
+function chartDefinition(d) {
+  const DATA_KEYS = ["y1", "y2"]
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

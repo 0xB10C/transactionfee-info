@@ -1,42 +1,33 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationBitcoinCore23, annotationTaprootActivated]
+const MOVING_AVERAGE_DAYS = 31
+const NAMES = ["key-path", "script-path"]
+const PRECISION = 1
+let START_DATE =  new Date("2021-11");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/inputs_p2tr_keypath_sum.csv"),
-  d3.csv("/csv/inputs_p2tr_scriptpath_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/inputs_p2tr_keypath_sum.csv"),
+  fetchCSV("/csv/inputs_p2tr_scriptpath_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const key = parseFloat(data[1][i].inputs_p2tr_keypath_sum)
-    const script = parseFloat(data[2][i].inputs_p2tr_scriptpath_sum)
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: []}
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const key = parseFloat(input[1][i].inputs_p2tr_keypath_sum)
+    const script = parseFloat(input[2][i].inputs_p2tr_scriptpath_sum)
     const sum = key + script
 
-    let key_percentage = 0
-    if (!isNaN(key / sum)) {
-        key_percentage = key / sum
-    }
+    let key_percentage = key / sum || 0
+    let script_percentage = script / sum || 0
 
-    let script_percentage = 0
-    if (!isNaN(script / sum)) {
-        script_percentage = script / sum
-    }
-
-    combinedData.push({date, key_percentage, script_percentage})
+    data.y1.push(key_percentage * 100)
+    data.y2.push(script_percentage * 100)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = [annotationBitcoinCore23]
-
-const keys = ["key_percentage", "script_percentage"]
-const colors = {"key_percentage": colorBLUE,  "script_percentage": colorYELLOW}
-const labels = {"key_percentage": "key-path spends",  "script_percentage": "script-path spend"}
-const dataType = dataTypePercentage
-const unit = ""
-const startDate = d3.timeParse("%Y-%m-%d")("2021-11-01")
-
-const chartFunction = stackedAreaChart
+function chartDefinition(d) {
+  const DATA_KEYS = ["y1", "y2"]
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

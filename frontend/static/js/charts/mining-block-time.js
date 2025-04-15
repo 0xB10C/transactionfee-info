@@ -1,29 +1,31 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationChinaMiningBan, annotationASICsAvaliable, annotationGPUMinerAvaliable]
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "block time"
+const PRECISION = 2
+let START_DATE =  new Date("2017");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/block_count_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/block_count_sum.csv"),
 ]
 
-function preprocess(data) {
-  let combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const blocks_per_day = parseFloat(data[1][i].block_count_sum)
-    const minutes_per_day = 24 * 60
+function preprocess(input) {
+  const minutes_per_day = 24 * 60
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const blocks_per_day = parseFloat(input[1][i].block_count_sum)
     const y = minutes_per_day / blocks_per_day
-    combinedData.push({date, y})
+    data.y.push(y)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = [annotationChinaMiningBan]
-const labels = {"y": "Block Time"}
-const dataType = dataTypeFloatMinutes
-const unit = "min"
-const startDate = d3.timeParse("%Y-%m-%d")("2017-07-01")
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  option.series.push(
+    // Annotations:
+    { type: "line", markLine: { symbol: "none", lineStyle: { color:"gray", type: "dotted" }, data: [{ name: "10", yAxis: 10, label: { formatter: "10 min" } }] } },
+  )
+  return option;
+}

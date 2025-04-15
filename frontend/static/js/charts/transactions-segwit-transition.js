@@ -1,38 +1,36 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased]
+const MOVING_AVERAGE_DAYS = 31
+const NAMES = ["legacy only", "mixed", "SegWit only"]
+const PRECISION = 1
+let START_DATE =  new Date("2017");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/tx_spending_only_legacy_sum.csv"),
-  d3.csv("/csv/tx_spending_only_segwit_sum.csv"),
-  d3.csv("/csv/tx_spending_segwit_and_legacy_sum.csv"),
-  d3.csv("/csv/transactions_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/tx_spending_only_legacy_sum.csv"),
+  fetchCSV("/csv/tx_spending_only_segwit_sum.csv"),
+  fetchCSV("/csv/tx_spending_segwit_and_legacy_sum.csv"),
+  fetchCSV("/csv/transactions_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const legacyOnly = parseFloat(data[1][i].tx_spending_only_legacy_sum)
-    const segwitOnly = parseFloat(data[2][i].tx_spending_only_segwit_sum)
-    const mixed = parseFloat(data[3][i].tx_spending_segwit_and_legacy_sum)
-    const total = parseFloat(data[4][i].transactions_sum)
-
-    const legacyOnly_percentage = legacyOnly / total || 0
-    const segwitOnly_percentage = segwitOnly / total || 0
-    const mixed_percentage = mixed / total || 0
-
-    combinedData.push({date, legacyOnly_percentage, segwitOnly_percentage, mixed_percentage})
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: [], y3: []}
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const legacyOnly = parseFloat(input[1][i].tx_spending_only_legacy_sum)
+    const segwitOnly = parseFloat(input[2][i].tx_spending_only_segwit_sum)
+    const mixed = parseFloat(input[3][i].tx_spending_segwit_and_legacy_sum)
+    const total = parseFloat(input[4][i].transactions_sum)
+    const y1 = legacyOnly / total || 0
+    const y2 = mixed / total || 0
+    const y3 = segwitOnly / total || 0
+    data.y1.push(y1 * 100)
+    data.y2.push(y2 * 100)
+    data.y3.push(y3 * 100)
   }
-
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")(annotationSegWitActivated.date) - (DAYS31*12)
-const annotations = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased]
-const keys = ["legacyOnly_percentage", "mixed_percentage", "segwitOnly_percentage"]
-const colors = {"legacyOnly_percentage": colorP2WSH, "segwitOnly_percentage": colorP2WPKH, "mixed_percentage": colorNestedP2WSH}
-const labels = {"legacyOnly_percentage": "only legacy inputs", "segwitOnly_percentage": "only SegWit inputs", "mixed_percentage": "both legacy and SegWit inputs"}
-const dataType = dataTypePercentage
-const unit = ""
-
-const chartFunction = stackedAreaChart
+function chartDefinition(d) {
+  const DATA_KEYS = ["y1", "y2", "y3"]
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}
