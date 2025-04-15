@@ -1,28 +1,25 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationTaprootLockedIn, annotationTaprootActivated, annotationBitcoinCore23, annotationInscriptionsHype]
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "Transactions spending Taproot"
+const PRECISION = 2
+let START_DATE =  new Date("2021");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/tx_spending_taproot_sum.csv"),
-  d3.csv("/csv/transactions_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/transactions_sum.csv"),
+  fetchCSV("/csv/tx_spending_taproot_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = parseFloat(data[1][i].tx_spending_taproot_sum) / parseFloat(data[2][i].transactions_sum)
-    combinedData.push({date, y})
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const y = parseFloat(input[2][i].tx_spending_taproot_sum) / parseFloat(input[1][i].transactions_sum)
+    data.y.push(y * 100)
   }
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")(annotationTaprootLockedIn.date) - DAYS31
-const annotations = [annotationTaprootLockedIn, annotationTaprootActivated, annotationBitcoinCore23]
-const labels = {"y": "spending Taproot"}
-const dataType = dataTypePercentagePrecise
-const unit = ""
-
-var yDomain = (_ => [0, 1])
-yAxis.tickFormat(d3.format("~p"));
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

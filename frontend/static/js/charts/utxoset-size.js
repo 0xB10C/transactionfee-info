@@ -1,34 +1,34 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationInscriptionsHype]
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "UTXO set size (count)"
+const PRECISION = 0
+let START_DATE =  new Date("2013");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/inputs_sum.csv"),
-  d3.csv("/csv/outputs_sum.csv"),
-  d3.csv("/csv/outputs_opreturn_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/inputs_sum.csv"),
+  fetchCSV("/csv/outputs_sum.csv"),
+  fetchCSV("/csv/outputs_opreturn_sum.csv"),
 ]
 
-function preprocess(data) {
-  let combinedData = []
-  let utxos = 0
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    utxos += parseFloat(data[2][i].outputs_sum)
-    utxos -= parseFloat(data[3][i].outputs_opreturn_sum)
-    utxos -= parseFloat(data[1][i].inputs_sum)
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  let utxos = 0;
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    utxos += parseFloat(input[2][i].outputs_sum)
+    utxos -= parseFloat(input[3][i].outputs_opreturn_sum)
+    utxos -= parseFloat(input[1][i].inputs_sum)
+    // FIXME: Why do the number of UTXOs is sometimes negative?
+    if (utxos < 0) {
+      utxos = 0;
+    }
     const y = utxos
-    combinedData.push({date, y})
+    data.y.push(y)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = []
-const labels = {"y": "UTXO set size (count)"}
-const dataType = dataTypeMetric
-yAxis.tickFormat(d3.format("~s"));
-const unit = ""
-
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-const chartFunction = lineWithAreaChart
-const startDate = d3.timeParse("%Y-%m-%d")("2017-07-01")
+function chartDefinition(d) {
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

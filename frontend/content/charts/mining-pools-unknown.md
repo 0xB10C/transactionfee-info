@@ -11,7 +11,7 @@ images:
   - /img/chart-thumbnails/mining-pools-unknown.png
 ---
 
-Unkown network hashrate share.
+Unknown network hashrate share.
 
 <!--more-->
 

@@ -1,21 +1,26 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationSegWitActivated]
+const MOVING_AVERAGE_DAYS = 31
+const NAMES = ["P2MS", "P2SH", "nested P2WSH", "P2WSH"]
+const PRECISION = 1
+let START_DATE =  new Date("2017-08");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/inputs_spending_p2ms_multisig_sum.csv"),
-  d3.csv("/csv/inputs_spending_p2sh_multisig_sum.csv"),
-  d3.csv("/csv/inputs_spending_nested_p2wsh_multisig_sum.csv"),
-  d3.csv("/csv/inputs_spending_p2wsh_multisig_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/inputs_spending_p2ms_multisig_sum.csv"),
+  fetchCSV("/csv/inputs_spending_p2sh_multisig_sum.csv"),
+  fetchCSV("/csv/inputs_spending_nested_p2wsh_multisig_sum.csv"),
+  fetchCSV("/csv/inputs_spending_p2wsh_multisig_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const ms_P2MS = parseFloat(data[1][i].inputs_spending_p2ms_multisig_sum)
-    const ms_P2SH = parseFloat(data[2][i].inputs_spending_p2sh_multisig_sum)
-    const ms_Nested_P2WSH = parseFloat(data[3][i].inputs_spending_nested_p2wsh_multisig_sum)
-    const ms_P2WSH = parseFloat(data[4][i].inputs_spending_p2wsh_multisig_sum)
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: [], y3: [], y4: []}
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+
+    const ms_P2MS = parseFloat(input[1][i].inputs_spending_p2ms_multisig_sum)
+    const ms_P2SH = parseFloat(input[2][i].inputs_spending_p2sh_multisig_sum)
+    const ms_Nested_P2WSH = parseFloat(input[3][i].inputs_spending_nested_p2wsh_multisig_sum)
+    const ms_P2WSH = parseFloat(input[4][i].inputs_spending_p2wsh_multisig_sum)
 
     const total = ms_P2MS + ms_P2SH + ms_Nested_P2WSH + ms_P2WSH
 
@@ -23,22 +28,16 @@ function preprocess(data) {
     const ms_P2SH_percentage = ms_P2SH / total || 0
     const ms_Nested_P2WSH_percentage = ms_Nested_P2WSH / total || 0
     const ms_P2WSH_percentage = ms_P2WSH / total || 0
-
-    const filler = total == 0 ? 1 : 0
-
-    combinedData.push({date, ms_P2MS_percentage, ms_P2SH_percentage, ms_Nested_P2WSH_percentage, ms_P2WSH_percentage, filler})
+    
+    data.y1.push(ms_P2MS_percentage * 100)
+    data.y2.push(ms_P2SH_percentage * 100)
+    data.y3.push(ms_Nested_P2WSH_percentage * 100)
+    data.y4.push(ms_P2WSH_percentage * 100)
   }
-
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")("2017-07-01")
-const annotations = [annotationSegWitActivated]
-const labels = {"ms_P2MS_percentage": "P2MS", "ms_Nested_P2WSH_percentage": "Nested P2WSH", "ms_P2SH_percentage": "P2SH", "ms_P2WSH_percentage": "P2WSH"}
-const dataType = dataTypePercentage
-const unit = ""
-
-var keys = ["ms_P2MS_percentage", "ms_P2SH_percentage", "ms_Nested_P2WSH_percentage", "ms_P2WSH_percentage"]
-var colors = {"ms_P2MS_percentage": colorP2MS, "ms_Nested_P2WSH_percentage": colorNestedP2WSH, "ms_P2SH_percentage": colorP2SH, "ms_P2WSH_percentage": colorP2WSH}
-
-const chartFunction = stackedAreaChart
+function chartDefinition(d) {
+  const DATA_KEYS = ["y1", "y2", "y3", "y4"]
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

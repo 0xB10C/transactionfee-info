@@ -1,27 +1,24 @@
-const chartRollingAverage = 1
+const ANNOTATIONS = []
+const MOVING_AVERAGE_DAYS = 1
+const NAME = "SigHashes"
+const PRECISION = 0
+let START_DATE =  new Date();
+START_DATE.setFullYear(new Date().getFullYear() - 3);
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/sigs_sighash_single_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/sigs_sighash_single_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = parseFloat(data[1][i].sigs_sighash_single_sum)
-    combinedData.push({date, y})
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    data.y.push(parseFloat(input[1][i].sigs_sighash_single_sum))
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = []
-const labels = {"y": "SigHashs"}
-const dataType = dataTypeInteger
-const unit = ""
-
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

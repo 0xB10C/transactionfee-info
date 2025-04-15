@@ -1,0 +1,222 @@
+/* Shared code to load data and render charts */
+
+var chart
+var preProcessedData
+
+const annotationBitcoinQTv0_6 = {'text': 'Bitcoin-QT v0.6 release', 'date': '2012-03-30'} // https://bitcoin.org/en/release/v0.6.0
+const annotationBitcoinQTv0_7 = {'text': 'Bitcoin-QT v0.7 release', 'date': '2012-09-17'} // https://bitcoin.org/en/release/v0.7.0
+const annotationBitcoinQTv0_8 = {'text': 'Bitcoin-QT v0.8 release', 'date': '2013-02-19'}
+const annotationBitcoinCorev0_9 = {'text': 'Bitcoin Core v0.9.0 release', 'date': '2014-03-19'}
+const annotationBitcoinCorev0_10 = {'text': 'Bitcoin Core v0.10.0 release', 'date': '2015-02-16'}
+const annotationBIP66Activated = {'text': 'BIP66 Activation', 'date': '2015-07-04'}
+const annotationBitcoinCorev0_11_1 = {'text': 'Bitcoin Core v0.11.1 release', 'date': '2015-10-15'}
+const annotationBitcoinCoreSegWitWalletReleased = {'text': 'Bitcoin Core SegWit wallet released', 'date': '2018-02-26'}
+const annotationSegWitActivated = {'text': 'SegWit Activation', 'date': '2017-08-24'}
+const annotationBitcoinCorev0_17 = {'text': 'Bitcoin Core v0.17.0 release', 'date': '2018-10-03'}
+const annotationBitcoinCorev0_19 = {'text': 'Bitcoin Core v0.19.0.1 release', 'date': '2019-11-24'}
+const annotationBlockchainComSegwit = {'text': 'Blockchain.com wallet supports SegWit ', 'date': '2021-06-02'}
+const annotationTaprootLockedIn = {'text': 'Taproot soft-fork locked-in', 'date': '2021-06-12'}
+const annotationTaprootActivated = {'text': 'Taproot soft-fork activated', 'date': '2021-11-14'}
+const annotationBitcoinCore23 = {'text': 'Bitcoin Core v23 released', 'date': '2022-04-25'}
+const annotationChinaMiningBan = {'text': 'China mining ban', 'date': '2021-05-21'}
+const annotationASICsAvaliable = {'text': 'First ASIC miners avaliable', 'date': '2013-08-01'} 
+const annotationGPUMinerAvaliable = {'text': 'First GPU miners avaliable', 'date': '2010-07-01'}
+const annotationP2SHActivation = {'text': 'P2SH Activation', 'date': '2012-04-01'}
+const annotationInscriptionsHype = {'text': 'Inscriptions hype', 'date': '2023-04-15'}
+const annotationRunestones = {'text': 'Runestones', 'date': '2024-04-21'}
+
+const zip = (a, b) => a.map((k, i) => [k, b[i]]);
+
+const watermark = (text) => { return { type: 'text', left: 'center', top: 'center', style: { text: text, font: 'bold 48px sans-serif', fill: 'rgba(0, 0, 0, 0.1)' }, z: 100, silent: true } };
+const thumbnailTool = {
+  show: isDevBuild,
+  title: "save Thumbnail",
+  icon: "path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891",
+  onclick: function (){
+    saveThumbnail()
+  }
+}
+const toolbox = () => {return { show: true, feature: { myThumbnailTool: thumbnailTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}}};
+
+const BASE_CHART_OPTION = {
+  graphic: watermark(watermarkText),
+  legend: { },
+  animation: false,
+  toolbox: toolbox(),
+  tooltip: { trigger: 'axis' },
+}
+
+async function fetchCSV(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const values = line.split(',').map(v => v.trim());
+    return Object.fromEntries(headers.map((h, i) => [h, values[i]]));
+  });
+}
+
+function movingAverage(data, windowSize, precision = 0) {
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < windowSize - 1) {
+      result.push(null); // not enough data yet
+      continue;
+    }
+    const slice = data.slice(i - windowSize + 1, i + 1);
+    const sum = slice.reduce((a, b) => a + b, 0);
+    result.push((sum / windowSize).toFixed(precision));
+  }
+  return result;
+}
+
+async function draw(option) {
+  chart = echarts.init(document.getElementById("chart"), 'kelly');
+  chart.setOption(option);
+}
+
+function formatWithSIPrefix(value, unit="") {
+  const si = [
+    { value: 1e24, symbol: "Y" }, // yotta
+    { value: 1e21, symbol: "Z" }, // zetta
+    { value: 1e18, symbol: "E" }, // exa
+    { value: 1e15, symbol: "P" }, // peta
+    { value: 1e12, symbol: "T" }, // tera
+    { value: 1e9,  symbol: "G" }, // giga
+    { value: 1e6,  symbol: "M" }, // mega
+    { value: 1e3,  symbol: "k" }, // kilo
+  ];
+  for (let i = 0; i < si.length; i++) {
+    if (Math.abs(value) >= si[i].value) {
+      return (value / si[i].value).toFixed(1).replace(/\.0$/, '') + " " + si[i].symbol + unit;
+    }
+  }
+  return `${value} ${unit}`
+}
+
+function formatPercentage(v) {
+  return v + "%";
+}
+
+function saveThumbnail() {
+  draw({
+    grid: {
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      containLabel: false
+    },
+    xAxis: { show: false },
+    yAxis: { show: false },
+    tooltip: { show: false },
+    legend: { show: false },
+    toolbox: { show: false },
+    dataZoom: [{show: false}, {show: false}],
+    graphic: {show: false},
+    animation: false,
+    animationDuration: 0,
+    series: chart.getOption().series.map(s => {
+      s.markLine = { label: { show: false }, lineStyle: {width: 0}};
+      return s
+    })
+  });
+  const canvas = chart.getRenderedCanvas({
+    backgroundColor: '#ffffff',
+    pixelRatio: 2
+  });
+
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  link.download = chartPNGFileName;
+  link.click();
+}
+
+// Single line (area) chart
+// expects date and y
+function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
+  y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
+  return {
+    ...BASE_CHART_OPTION,
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', name: NAME },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+    ]
+  }
+}
+
+// Area chart showing a precentage
+// expects date and y (between 0 and 100)
+function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
+  y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
+  return {
+    ...BASE_CHART_OPTION,
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+    ]
+  }
+}
+
+// double line chart
+// expects date, y1 and y2
+function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
+  y1 = zip(d.date, movingAverage(d.y1, MOVING_AVERAGE_DAYS, PRECISION))
+  y2 = zip(d.date, movingAverage(d.y2, MOVING_AVERAGE_DAYS, PRECISION))
+  return {
+    ...BASE_CHART_OPTION,
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value' },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAMES[0], smooth: false, type: 'line', data: y1, symbol: "none"},
+      { name: NAMES[1], smooth: false, type: 'line', data: y2, symbol: "none"},
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+    ]
+  }
+}
+
+// stacked area chart
+// expects date, and multiple DATA_KEYS entries
+function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
+  if (DATA_KEYS.length != NAMES.length) {
+    alert("DATA_KEYS length does not match NAMES length!");
+    return
+  }
+  return {
+    ...BASE_CHART_OPTION,
+    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
+      return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, movingAverage(d[key], MOVING_AVERAGE_DAYS, PRECISION)), symbol: "none"}
+    }).concat(
+    [
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop", backgroundColor: "transparent"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+    ]),
+  }
+}
+
+window.onload = function () {
+  Promise.all(CSVs).then(function(data) {
+    processedData = preprocess(data)
+    let option = chartDefinition(processedData)
+    draw(option)
+  });
+}

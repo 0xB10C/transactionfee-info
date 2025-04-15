@@ -1,27 +1,31 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationBitcoinCorev0_9, annotationBitcoinCorev0_11_1, annotationBitcoinCorev0_17]
+const MOVING_AVERAGE_DAYS = 31
+const NAMES = ["<70 byte", "70 byte", "71 byte", "72 byte", "73 byte", "74 byte", "75 byte or more"]
+const PRECISION = 1
+let START_DATE =  new Date("2011");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/sigs_ecdsa_length_less_70byte_sum.csv"),
-  d3.csv("/csv/sigs_ecdsa_length_70byte_sum.csv"),
-  d3.csv("/csv/sigs_ecdsa_length_71byte_sum.csv"),
-  d3.csv("/csv/sigs_ecdsa_length_72byte_sum.csv"),
-  d3.csv("/csv/sigs_ecdsa_length_73byte_sum.csv"),
-  d3.csv("/csv/sigs_ecdsa_length_74byte_sum.csv"),
-  d3.csv("/csv/sigs_ecdsa_length_75byte_or_more_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/sigs_ecdsa_length_less_70byte_sum.csv"),
+  fetchCSV("/csv/sigs_ecdsa_length_70byte_sum.csv"),
+  fetchCSV("/csv/sigs_ecdsa_length_71byte_sum.csv"),
+  fetchCSV("/csv/sigs_ecdsa_length_72byte_sum.csv"),
+  fetchCSV("/csv/sigs_ecdsa_length_73byte_sum.csv"),
+  fetchCSV("/csv/sigs_ecdsa_length_74byte_sum.csv"),
+  fetchCSV("/csv/sigs_ecdsa_length_75byte_or_more_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const lenLess70= parseFloat(data[1][i].sigs_ecdsa_length_less_70byte_sum)
-    const len70 = parseFloat(data[2][i].sigs_ecdsa_length_70byte_sum)
-    const len71 = parseFloat(data[3][i].sigs_ecdsa_length_71byte_sum)
-    const len72 = parseFloat(data[4][i].sigs_ecdsa_length_72byte_sum)
-    const len73 = parseFloat(data[5][i].sigs_ecdsa_length_73byte_sum)
-    const len74 = parseFloat(data[6][i].sigs_ecdsa_length_74byte_sum)
-    const len75 = parseFloat(data[7][i].sigs_ecdsa_length_75byte_or_more_sum)
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: [], y3: [], y4: [], y5: [], y6: [], y7: []}
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const lenLess70= parseFloat(input[1][i].sigs_ecdsa_length_less_70byte_sum)
+    const len70 = parseFloat(input[2][i].sigs_ecdsa_length_70byte_sum)
+    const len71 = parseFloat(input[3][i].sigs_ecdsa_length_71byte_sum)
+    const len72 = parseFloat(input[4][i].sigs_ecdsa_length_72byte_sum)
+    const len73 = parseFloat(input[5][i].sigs_ecdsa_length_73byte_sum)
+    const len74 = parseFloat(input[6][i].sigs_ecdsa_length_74byte_sum)
+    const len75 = parseFloat(input[7][i].sigs_ecdsa_length_75byte_or_more_sum)
 
     const total = lenLess70 + len70 + len71 + len72 + len73 + len74 + len75
 
@@ -32,22 +36,19 @@ function preprocess(data) {
     const len73_percentage = len73 / total || 0
     const len74_percentage = len74 / total || 0
     const len75_percentage = len75 / total || 0
-
-    const filler = total == 0 ? 1 : 0
-
-    combinedData.push({date, lenLess70_percentage, len70_percentage, len71_percentage, len72_percentage, len73_percentage, len74_percentage, len75_percentage, filler})
+    
+    data.y1.push(lenLess70_percentage * 100)
+    data.y2.push(len70_percentage * 100)
+    data.y3.push(len71_percentage * 100)
+    data.y4.push(len72_percentage * 100)
+    data.y5.push(len73_percentage * 100)
+    data.y6.push(len74_percentage * 100)
+    data.y7.push(len75_percentage * 100)
   }
-
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")("2011-01-01")
-const annotations = [annotationBitcoinCorev0_9, annotationBitcoinCorev0_11_1, annotationBitcoinCorev0_17]
-const labels = {"lenLess70_percentage": "<70 byte", "len70_percentage": "70 byte", "len71_percentage": "71 byte", "len72_percentage": "72 byte", "len73_percentage": "73 byte", "len74_percentage": "74 byte", "len75_percentage": "75 byte or more"}
-const dataType = dataTypePercentage
-const unit = ""
-
-var keys = ["lenLess70_percentage", "len70_percentage", "len71_percentage", "len72_percentage", "len73_percentage", "len74_percentage", "len75_percentage"] 
-var colors = {"lenLess70_percentage": colorGRAY, "len70_percentage": colorORANGE, "len71_percentage": colorBLUE, "len72_percentage": colorYELLOW, "len73_percentage": colorRED, "len74_percentage": colorGREEN, "len75_percentage": colorBLACK}
-
-const chartFunction = stackedAreaChart
+function chartDefinition(d) {
+  const DATA_KEYS = ["y1", "y2", "y3", "y4", "y5", "y6", "y7"]
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

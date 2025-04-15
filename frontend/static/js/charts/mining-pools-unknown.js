@@ -1,32 +1,29 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = []
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "Unknown pools share"
+const PRECISION = 2
+// set to the first date we have data for
+let START_DATE =  undefined
 
 const CSVs = [
   // ID from https://github.com/bitcoin-data/mining-pools/blob/generated/pool-list.json
-  d3.csv("/csv/miningpools-poolid-0.csv"),
+  fetchCSV("/csv/miningpools-poolid-0.csv"),
 ]
 
-// set to the first date we have data for
-let startDate = undefined
-
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    if (startDate === undefined) {
-      startDate = date
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    const date = new Date(input[0][i].date)
+    if (START_DATE === undefined) {
+      START_DATE = date
     }
-    const y = parseFloat(data[0][i].count / data[0][i].total)
-    combinedData.push({date, y})
+    const y = parseFloat(input[0][i].count / input[0][i].total)
+    data.date.push(+(date))
+    data.y.push(y*100)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = []
-const labels = {"y": "share of hashrate"}
-const dataType = dataTypePercentage
-yAxis.tickFormat(d3.format("~p"));
-var yValue = (d => d.y);
-var yDomain = (data => [0, 1])
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+}

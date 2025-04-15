@@ -1,35 +1,38 @@
-const chartRollingAverage = 7
+const ANNOTATIONS = [annotationChinaMiningBan]
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "hashrate"
+const PRECISION = 0
+let START_DATE =  new Date("2009-01-01");
+const UNIT = "H/s"
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/block_count_sum.csv"),
-  d3.csv("/csv/difficulty_avg.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/block_count_sum.csv"),
+  fetchCSV("/csv/difficulty_avg.csv"),
 ]
 
-function preprocess(data) {
-  let combinedData = []
+function preprocess(input) {
   const twoToThe32 = 2 ** 32;
   const minutes_per_day = 24 * 60
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const blocks_per_day = parseFloat(data[1][i].block_count_sum)
-    const difficulty = parseFloat(data[2][i].difficulty_avg)
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const blocks_per_day = parseFloat(input[1][i].block_count_sum)
+    const difficulty = parseFloat(input[2][i].difficulty_avg)
     const block_time_minutes = minutes_per_day / blocks_per_day
     const block_time_seconds = block_time_minutes * 60
     const hashrate = Math.trunc((twoToThe32 * difficulty) / block_time_seconds)
     const y = hashrate
-    combinedData.push({date, y})
+    data.y.push(y)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = [annotationChinaMiningBan]
-const labels = {"y": "Hashrate"}
-const dataType = dataTypeMetric
-const unit = "H/s"
-
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-const startDate = d3.timeParse("%Y-%m-%d")("2017-07-01")
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  const EXTRA = {
+    tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
+    yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
+  }
+  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  return {...option, ...EXTRA};
+}
