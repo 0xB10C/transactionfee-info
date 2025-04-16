@@ -1,29 +1,40 @@
-const chartRollingAverage = 7
+// TODO: annoation annotationChinaMiningBan
+// TODO: average line
+// TODO: expected line
+const movingAverageDays = 7
+const name = "block time"
+const precision = 2
+let startDate = new Date("2017");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/block_count_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/block_count_sum.csv"),
 ]
 
-function preprocess(data) {
-  let combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const blocks_per_day = parseFloat(data[1][i].block_count_sum)
-    const minutes_per_day = 24 * 60
+function preprocess(input) {
+  const minutes_per_day = 24 * 60
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const blocks_per_day = parseFloat(input[1][i].block_count_sum)
     const y = minutes_per_day / blocks_per_day
-    combinedData.push({date, y})
+    data.y.push(y)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = [annotationChinaMiningBan]
-const labels = {"y": "Block Time"}
-const dataType = dataTypeFloatMinutes
-const unit = "min"
-const startDate = d3.timeParse("%Y-%m-%d")("2017-07-01")
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value' },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}

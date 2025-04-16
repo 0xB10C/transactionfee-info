@@ -1,29 +1,36 @@
-const chartRollingAverage = 1
+const movingAverageDays = 7
+const name = "BTC in OP_RETURN"
+const precision = 8
+let startDate = new Date("2013-01-01");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/outputs_opreturn_amount_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/outputs_opreturn_amount_sum.csv"),
 ]
 
-function preprocess(data) {
+function preprocess(input) {
   cumulativeValue = 0
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    cumulativeValue += parseFloat(data[1][i].outputs_opreturn_amount_sum)
-    const y = cumulativeValue
-    combinedData.push({date, y})
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    cumulativeValue += parseFloat(input[1][i].outputs_opreturn_amount_sum)
+    data.y.push(cumulativeValue/ 100_000_000)
   }
-  
-  return combinedData
+  return data
 }
 
-const annotations = []
-const labels = {"y": "Outputs"}
-const dataType = dataTypeInteger
-const unit = "sat"
-
-var yValue = (d => d.y);
-var yDomain = (data => [d3.min(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : Infinity), d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value' },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}

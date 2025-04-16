@@ -1,27 +1,36 @@
-const chartRollingAverage = 7
+// TODO: annotationSegWitActivated
+const movingAverageDays = 7
+const name = "block size in bytes"
+const precision = 0
+let startDate = new Date();
+startDate.setFullYear(new Date().getFullYear() - 3);
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/size_avg.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/size_avg.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = parseFloat(data[1][i].size_avg) || 0
-    combinedData.push({date, y})
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    data.y.push(parseFloat(input[1][i].size_avg))
   }
-  
-  return combinedData
+  return data
 }
 
-const annotations = [annotationSegWitActivated]
-const labels = {"y": "Size"}
-const dataType = dataTypeInteger
-const unit = "byte"
-
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value' },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}
