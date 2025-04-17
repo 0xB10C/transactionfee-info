@@ -1,28 +1,37 @@
-const chartRollingAverage = 7
+// TODO: annotation segwit
+const movingAverageDays = 7
+const name = "Payments spending SegWit"
+const precision = 2
+let startDate = new Date("2017");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/payments_sum.csv"),
-  d3.csv("/csv/payments_segwit_spending_tx_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/payments_sum.csv"),
+  fetchCSV("/csv/payments_segwit_spending_tx_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = parseFloat(data[2][i].payments_segwit_spending_tx_sum) / parseFloat(data[1][i].payments_sum) || 0
-    console.log(y)
-    combinedData.push({date, y})
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const y = parseFloat(input[2][i].payments_segwit_spending_tx_sum) / parseFloat(input[1][i].payments_sum)
+    data.y.push(y * 100)
   }
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")(annotationSegWitActivated.date) - DAYS31
-const annotations = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBlockchainComSegwit]
-const labels = {"y": "spending SegWit"}
-const dataType = dataTypePercentage
-const unit = ""
-const chartFunction = lineWithAreaChart
-
-var yDomain = (_ => [0, 1])
-yAxis.tickFormat(d3.format("~p"));
+function chartDefinition(d) {
+  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}

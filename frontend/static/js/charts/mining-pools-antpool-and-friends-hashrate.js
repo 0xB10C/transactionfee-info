@@ -1,37 +1,47 @@
-const chartRollingAverage = 31
+const movingAverageDays = 7
+const name = "AntPool & friends share"
+const precision = 2
+
+// We don't know for sure when the smaller pools joined "AntPool & Friends".
+// We assume this started sometime in mid 2022. Ignore all data before that
+// date.
+const ANTPOOL_FRIENDS_START_DATE = new Date(Date.parse("2022-07-01"));
+
+// set to the first date we have data for
+let startDate = ANTPOOL_FRIENDS_START_DATE
+
 
 const CSVs = [
-  d3.csv("/csv/miningpools-antpool-and-friends.csv"),
+  // ID from https://github.com/bitcoin-data/mining-pools/blob/generated/pool-list.json
+  fetchCSV("/csv/miningpools-antpool-and-friends.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-
-  // We don't know for sure when the smaller pools joined "AntPool & Friends".
-  // We assume this started sometime in mid 2022. Ignore all data before that
-  // date.
-  const ANTPOOL_FRIENDS_START_DATE = new Date(Date.parse("2022-07-01"));
-
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    const date = new Date(input[0][i].date)
     if (date < ANTPOOL_FRIENDS_START_DATE) {
       continue
     }
-
-    const total_blocks = parseFloat(data[0][i].total)
-    const y = parseFloat(data[0][i]["AntPool & friends"]) / total_blocks
-    combinedData.push({date, y})
+    const y = parseFloat(input[0][i]["AntPool & friends"] / input[0][i].total)
+    data.date.push(+(date))
+    data.y.push(y*100)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = []
-const chartFunction = lineWithAreaChart
-const startDate = d3.timeParse("%Y-%m-%d")("2023-01-01")
-const labels = {"y": "share of hashrate"}
-const dataType = dataTypePercentage
-yAxis.tickFormat(d3.format("~p"));
-var yValue = (d => d.y);
-var yDomain = (data => [0, 1])
+function chartDefinition(d) {
+  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}

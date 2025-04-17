@@ -1,3 +1,5 @@
+// TODO: vertial line at 144
+// TODO: average line
 const movingAverageDays = 7
 const name = "blocks per day"
 const precision = 0

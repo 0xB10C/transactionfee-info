@@ -1,26 +1,41 @@
-const chartRollingAverage = 1
+const movingAverageDays = 1
+const NAMES = ["inputs", "outputs"]
+const precision = 0
+let startDate = new Date();
+startDate.setFullYear(new Date().getFullYear() - 3);
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/inputs_p2a_sum.csv"),
-  d3.csv("/csv/outputs_p2a_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/inputs_p2a_sum.csv"),
+  fetchCSV("/csv/outputs_p2a_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y1 = parseFloat(data[1][i].inputs_p2a_sum)
-    const y2 = parseFloat(data[2][i].outputs_p2a_sum)
-    combinedData.push({date, y1, y2})
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const y1 = parseFloat(input[1][i].inputs_p2a_sum)
+    const y2 = parseFloat(input[2][i].outputs_p2a_sum)
+    data.y1.push(y1)
+    data.y2.push(y2)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = []
-const labels = {"y1": "Inputs", "y2": "Outputs"}
-const dataType = dataTypeInteger
-const unit = ""
-
-const chartFunction = twoLineChart
+function chartDefinition(d) {
+  y1 = zip(d.date, movingAverage(d.y1, movingAverageDays, precision))
+  y2 = zip(d.date, movingAverage(d.y2, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis'},
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value' },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAMES[0], smooth: false, color: colorBLUE, type: 'line', data: y1, symbol: "none"},
+      { name: NAMES[1], smooth: false, color: colorRED, type: 'line', data: y2, symbol: "none"}
+    ]
+  }
+}

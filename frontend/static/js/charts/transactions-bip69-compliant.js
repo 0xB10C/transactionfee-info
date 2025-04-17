@@ -1,27 +1,38 @@
-const chartRollingAverage = 7
+// TODO: annotation BIP69 introduced
+const movingAverageDays = 7
+const name = "BIP-69 compliant"
+const precision = 2
+let startDate = new Date();
+startDate.setFullYear(new Date().getFullYear() - 5);
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/tx_bip69_compliant_sum.csv"),
-  d3.csv("/csv/transactions_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/transactions_sum.csv"),
+  fetchCSV("/csv/tx_bip69_compliant_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const y = parseFloat(data[1][i].tx_bip69_compliant_sum) / parseFloat(data[2][i].transactions_sum)
-    combinedData.push({date, y})
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const y = parseFloat(input[2][i].tx_bip69_compliant_sum) / parseFloat(input[1][i].transactions_sum)
+    data.y.push(y * 100)
   }
-  return combinedData
+  return data
 }
 
-const annotations = []
-const labels = {"y": "BIP-69 compliant"}
-const dataType = dataTypePercentage
-const unit = ""
-
-var yDomain = (_ => [0, 1])
-yAxis.tickFormat(d3.format("~p"));
-
-const chartFunction = lineWithAreaChart
+function chartDefinition(d) {
+  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}

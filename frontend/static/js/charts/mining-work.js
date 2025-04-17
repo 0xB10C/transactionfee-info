@@ -1,28 +1,40 @@
-const chartRollingAverage = 1
+// TODO: annotationChinaMiningBan
+const movingAverageDays = 1
+const name = "work"
+const precision = 0
+let startDate = new Date("2009-01-01");
+const UNIT = "H"
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/log2_work_avg.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/log2_work_avg.csv"),
 ]
 
-function preprocess(data) {
-  let combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const log2_work = parseFloat(data[1][i].log2_work_avg)
+function preprocess(input) {
+  let data = { date: [], y: [] }
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const log2_work = parseFloat(input[1][i].log2_work_avg)
     const y = 2 ** log2_work;
-    combinedData.push({date, y})
+    data.y.push(y)
   }
-
-  return combinedData
+  return data
 }
 
-const annotations = [annotationChinaMiningBan]
-const labels = {"y": "work"}
-const dataType = dataTypeMetric
-const unit = ""
+function chartDefinition(d) {
+  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis', valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}
 
-var yValue = (d => d.y);
-var yDomain = (data => [0, d3.max(data, d => (xScale.domain()[0] <= d.date && xScale.domain()[1] > d.date) ? yValue(d) : 0)])
-const chartFunction = lineWithAreaChart
-const startDate = d3.timeParse("%Y-%m-%d")("2009-01-03")
+

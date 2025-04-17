@@ -3,6 +3,34 @@
 var chart
 var preProcessedData
 
+const colorNAVY = "#001f3f"
+const colorBLUE = "#0074D9"
+const colorAQUA = "#7FDBFF"
+const colorTEAL = "#39CCCC"
+const colorOLIVE = "#3D9970"
+const colorGREEN = "#2ECC40"
+const colorLIME = "#01FF70"
+const colorYELLOW = "#FFDC00"
+const colorORANGE = "#FF851B"
+const colorRED = "#FF4136"
+const colorMAROON = "#85144b"
+const colorFUCHSIA = "#F012BE"
+const colorPURPLE = "#B10DC9"
+const colorBLACK = "#111111"
+const colorDARKGRAY = "#444444"
+const colorGRAY = "#AAAAAA"
+const colorSILVER = "#DDDDDD"
+
+const colorOPRETURN = colorLIME
+const colorP2PK = colorGRAY
+const colorP2PKH = colorRED
+const colorNestedP2WPKH = colorAQUA
+const colorP2WPKH = colorPURPLE
+const colorP2MS = colorNAVY
+const colorP2SH = colorYELLOW
+const colorNestedP2WSH = colorORANGE
+const colorP2WSH = colorBLUE
+const colorP2TR = colorMAROON
 
 const zip = (a, b) => a.map((k, i) => [k, b[i]]);
 
@@ -49,6 +77,29 @@ function movingAverage(data, windowSize, precision = 0) {
 async function draw(option) {
   chart = echarts.init(document.getElementById("chart"));
   chart.setOption(option);
+}
+
+function formatWithSIPrefix(value, unit="") {
+  const si = [
+    { value: 1e24, symbol: "Y" }, // yotta
+    { value: 1e21, symbol: "Z" }, // zetta
+    { value: 1e18, symbol: "E" }, // exa
+    { value: 1e15, symbol: "P" }, // peta
+    { value: 1e12, symbol: "T" }, // tera
+    { value: 1e9,  symbol: "G" }, // giga
+    { value: 1e6,  symbol: "M" }, // mega
+    { value: 1e3,  symbol: "k" }, // kilo
+  ];
+  for (let i = 0; i < si.length; i++) {
+    if (Math.abs(value) >= si[i].value) {
+      return (value / si[i].value).toFixed(1).replace(/\.0$/, '') + " " + si[i].symbol + unit;
+    }
+  }
+  return `${value} ${unit}`
+}
+
+function formatPercentage(v) {
+  return v + "%";
 }
 
 function safeThumbnail() {
