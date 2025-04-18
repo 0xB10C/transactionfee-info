@@ -1,8 +1,8 @@
 // TODO: annotationChinaMiningBan
-const movingAverageDays = 7
-const name = "hashrate"
-const precision = 0
-let startDate = new Date("2009-01-01");
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "hashrate"
+const PRECISION = 0
+let START_DATE =  new Date("2009-01-01");
 const UNIT = "H/s"
 
 const CSVs = [
@@ -29,17 +29,10 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
-  return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis', valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
-    xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value', axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
-    series: [
-      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
-    ]
+  const EXTRA = {
+    tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
+    yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
   }
+  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  return {...option, ...EXTRA};
 }

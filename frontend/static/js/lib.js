@@ -45,6 +45,14 @@ const thumbnailTool = {
 }
 const toolbox = () => {return { show: true, feature: { myThumbnailTool: thumbnailTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}}};
 
+const BASE_CHART_OPTION = {
+  graphic: watermark(watermarkText),
+  legend: { },
+  animation: false,
+  toolbox: toolbox(),
+  tooltip: { trigger: 'axis' },
+}
+
 async function fetchCSV(url) {
   const res = await fetch(url);
   const text = await res.text();
@@ -130,6 +138,72 @@ function safeThumbnail() {
   link.href = canvas.toDataURL('image/png');
   link.download = chartPNGFileName;
   link.click();
+}
+
+// Single line (area) chart
+// expects date and y
+function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+  y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
+  return {
+    ...BASE_CHART_OPTION,
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', name: NAME },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}
+
+// Area chart showing a precentage
+// expects date and y (between 0 and 100)
+function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+  y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
+  return {
+    ...BASE_CHART_OPTION,
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+    ]
+  }
+}
+
+// double line chart
+// expects date, y1 and y2
+function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+  y1 = zip(d.date, movingAverage(d.y1, MOVING_AVERAGE_DAYS, PRECISION))
+  y2 = zip(d.date, movingAverage(d.y2, MOVING_AVERAGE_DAYS, PRECISION))
+  return {
+    ...BASE_CHART_OPTION,
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value' },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAMES[0], smooth: false, type: 'line', data: y1, symbol: "none"},
+      { name: NAMES[1], smooth: false, type: 'line', data: y2, symbol: "none"}
+    ]
+  }
+}
+
+// stacked area chart
+// expects date, and multiple DATA_KEYS entries
+function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+  if (DATA_KEYS.length != NAMES.length) {
+    alert("DATA_KEYS length does not match NAMES length!");
+    return
+  }
+  return {
+    ...BASE_CHART_OPTION,
+    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
+      return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, movingAverage(d[key], MOVING_AVERAGE_DAYS, PRECISION)), symbol: "none"}
+    }),
+  }
 }
 
 window.onload = function () {

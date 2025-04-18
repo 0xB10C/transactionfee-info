@@ -1,6 +1,6 @@
-const movingAverageDays = 31
-const precision = 2
-let startDate = new Date("2023");
+const MOVING_AVERAGE_DAYS = 31
+const PRECISION = 2
+let START_DATE =  new Date("2023");
 
 const CSVs = [
   fetchCSV("/csv/miningpools-antpool-and-friends.csv"),
@@ -41,19 +41,16 @@ function preprocess(input) {
 
 function chartDefinition(d) {
   return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis' },
+    ...BASE_CHART_OPTION,
     xAxis: { type: "time" },
     yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: d.names.map((n) => {
       return {
         name: n,
         type: "line",
         symbol: 'none',
-        data: zip(d.date, movingAverage(d.pools[n], movingAverageDays, precision)),
+        data: zip(d.date, movingAverage(d.pools[n], MOVING_AVERAGE_DAYS, PRECISION)),
         smooth: true,
       }
     }),

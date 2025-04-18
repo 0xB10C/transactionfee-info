@@ -1,9 +1,9 @@
 // TODO: annotationSegWitActivated
-const movingAverageDays = 7
-const name = "block size in bytes"
-const precision = 0
-let startDate = new Date();
-startDate.setFullYear(new Date().getFullYear() - 3);
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "block size in bytes"
+const PRECISION = 0
+let START_DATE =  new Date();
+START_DATE.setFullYear(new Date().getFullYear() - 3);
 
 const CSVs = [
   fetchCSV("/csv/date.csv"),
@@ -20,17 +20,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
-  return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
-    series: [
-      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
-    ]
-  }
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
 }

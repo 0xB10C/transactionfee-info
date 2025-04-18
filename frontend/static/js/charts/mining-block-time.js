@@ -1,10 +1,10 @@
 // TODO: annoation annotationChinaMiningBan
 // TODO: average line
 // TODO: expected line
-const movingAverageDays = 7
-const name = "block time"
-const precision = 2
-let startDate = new Date("2017");
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "block time"
+const PRECISION = 2
+let START_DATE =  new Date("2017");
 
 const CSVs = [
   fetchCSV("/csv/date.csv"),
@@ -24,17 +24,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
-  return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
-    series: [
-      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
-    ]
-  }
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
 }

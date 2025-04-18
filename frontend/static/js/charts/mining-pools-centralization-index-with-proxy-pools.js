@@ -1,6 +1,6 @@
-const movingAverageDays = 31
-const precision = 2
-let startDate = new Date("2014-03");
+const MOVING_AVERAGE_DAYS = 31
+const PRECISION = 2
+let START_DATE =  new Date("2014-03");
 
 const CSVs = [
   fetchCSV("/csv/miningpools-centralization-index-with-proxy-pools.csv"),
@@ -47,19 +47,16 @@ function chartDefinition(d) {
   }
   
   return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis' },
+    ...BASE_CHART_OPTION,
     xAxis: { type: "time" },
     yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: ["y1", "y2", "y3", "y4", "y5"].map((y) => {
       return {
         name: labels[y],
         type: "line",
         symbol: 'none',
-        data: zip(d.date, movingAverage(d[y], movingAverageDays, precision)),
+        data: zip(d.date, movingAverage(d[y], MOVING_AVERAGE_DAYS, PRECISION)),
         smooth: true,
       }
     }),

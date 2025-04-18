@@ -1,6 +1,6 @@
-const movingAverageDays = 7
-const name = "AntPool & friends share"
-const precision = 2
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "AntPool & friends share"
+const PRECISION = 2
 
 // We don't know for sure when the smaller pools joined "AntPool & Friends".
 // We assume this started sometime in mid 2022. Ignore all data before that
@@ -8,7 +8,7 @@ const precision = 2
 const ANTPOOL_FRIENDS_START_DATE = new Date(Date.parse("2022-07-01"));
 
 // set to the first date we have data for
-let startDate = ANTPOOL_FRIENDS_START_DATE
+let START_DATE =  ANTPOOL_FRIENDS_START_DATE
 
 
 const CSVs = [
@@ -31,17 +31,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
-  return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
-    series: [
-      { name: name, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
-    ]
-  }
+  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
 }

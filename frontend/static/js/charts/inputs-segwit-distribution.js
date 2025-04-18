@@ -1,8 +1,8 @@
 // TODO: annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBitcoinCore23, annotationTaprootActivated
-const movingAverageDays = 7
+const MOVING_AVERAGE_DAYS = 7
 const NAMES = ["P2WSH", "P2WPKH", "nested P2WSH", "nested P2WPKH", "P2TR key-path", "P2TR script-path"]
-const precision = 1
-let startDate = new Date("2017-08");
+const PRECISION = 1
+let START_DATE =  new Date("2017-08");
 
 const CSVs = [
   fetchCSV("/csv/date.csv"),
@@ -45,27 +45,6 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  y1 = zip(d.date, movingAverage(d.y1, movingAverageDays, precision))
-  y2 = zip(d.date, movingAverage(d.y2, movingAverageDays, precision))
-  y3 = zip(d.date, movingAverage(d.y3, movingAverageDays, precision))
-  y4 = zip(d.date, movingAverage(d.y4, movingAverageDays, precision))
-  y5 = zip(d.date, movingAverage(d.y5, movingAverageDays, precision))
-  y6 = zip(d.date, movingAverage(d.y6, movingAverageDays, precision))
-  return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
-    xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
-    series: [
-      { name: NAMES[0], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y1, symbol: "none"},
-      { name: NAMES[1], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y2, symbol: "none"},
-      { name: NAMES[2], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y3, symbol: "none"},
-      { name: NAMES[3], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y4, symbol: "none"},
-      { name: NAMES[4], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y5, symbol: "none"},
-      { name: NAMES[5], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y6, symbol: "none"},
-    ]
-  }
+  const DATA_KEYS = ["y1", "y2", "y3", "y4", "y5", "y6"]
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
 }

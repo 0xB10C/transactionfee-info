@@ -1,7 +1,7 @@
-const movingAverageDays = 7
-const name = "UTXO set size (count)"
-const precision = 0
-let startDate = new Date("2013");
+const MOVING_AVERAGE_DAYS = 7
+const NAME = "UTXO set size (count)"
+const PRECISION = 0
+let START_DATE =  new Date("2013");
 
 const CSVs = [
   fetchCSV("/csv/date.csv"),
@@ -18,6 +18,10 @@ function preprocess(input) {
     utxos += parseFloat(input[2][i].outputs_sum)
     utxos -= parseFloat(input[3][i].outputs_opreturn_sum)
     utxos -= parseFloat(input[1][i].inputs_sum)
+    // FIXME: Why do the number of UTXOs is sometimes negative?
+    if (utxos < 0) {
+      utxos = 0;
+    }
     const y = utxos
     data.y.push(y)
   }
@@ -25,18 +29,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  y = zip(d.date, movingAverage(d.y, movingAverageDays, precision))
-  return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
-    series: [
-      // Note that we manually set it to 0 here as we get netgative nubers
-      { name: name, smooth: true, min: 0, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
-    ]
-  }
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
 }

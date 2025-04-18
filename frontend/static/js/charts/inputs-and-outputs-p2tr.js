@@ -1,9 +1,9 @@
 // TODO: annotationBitcoinCore23, annotationTaprootActivated
-const movingAverageDays = 7
+const MOVING_AVERAGE_DAYS = 7
 const NAMES = ["inputs", "outputs"]
-const precision = 0
-let startDate = new Date();
-startDate.setFullYear(new Date().getFullYear() - 3);
+const PRECISION = 0
+let START_DATE =  new Date();
+START_DATE.setFullYear(new Date().getFullYear() - 3);
 
 const CSVs = [
   fetchCSV("/csv/date.csv"),
@@ -25,19 +25,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  y1 = zip(d.date, movingAverage(d.y1, movingAverageDays, precision))
-  y2 = zip(d.date, movingAverage(d.y2, movingAverageDays, precision))
-  return {
-    graphic: watermark(watermarkText),
-    legend: { },
-    toolbox: toolbox(),
-    tooltip: { trigger: 'axis'},
-    xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
-    series: [
-      { name: NAMES[0], smooth: true, color: colorBLUE, type: 'line', data: y1, symbol: "none"},
-      { name: NAMES[1], smooth: true, color: colorRED, type: 'line', data: y2, symbol: "none"}
-    ]
-  }
+  return doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
 }
