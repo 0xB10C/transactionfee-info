@@ -121,7 +121,6 @@ function safeThumbnail() {
     animation: false,
     animationDuration: 0,
   });
-  console.log(chart.getOption());
   const canvas = chart.getRenderedCanvas({
     backgroundColor: '#ffffff',
     pixelRatio: 2

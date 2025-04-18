@@ -1,32 +1,41 @@
-const chartRollingAverage = 7
+// TODO: const annotations = [{'text': 'P2SH Activation', 'date': '2012-04-01'},{'text': 'SegWit Activation', 'date': '2017-07-24'}]
+const movingAverageDays = 7
+const NAMES = ["P2PK", "P2PKH", "P2WPKH", "P2MS", "P2SH", "P2WSH", "P2TR", "OPRETURN", "P2A", "other"]
+const precision = 1
+let startDate = new Date("2016");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/outputs_p2pk_sum.csv"),
-  d3.csv("/csv/outputs_p2pkh_sum.csv"),
-  d3.csv("/csv/outputs_p2wpkh_sum.csv"),
-  d3.csv("/csv/outputs_p2ms_sum.csv"),
-  d3.csv("/csv/outputs_p2sh_sum.csv"),
-  d3.csv("/csv/outputs_p2wsh_sum.csv"),
-  d3.csv("/csv/outputs_p2tr_sum.csv"),
-  d3.csv("/csv/outputs_opreturn_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/outputs_p2pk_sum.csv"),
+  fetchCSV("/csv/outputs_p2pkh_sum.csv"),
+  fetchCSV("/csv/outputs_p2wpkh_sum.csv"),
+  fetchCSV("/csv/outputs_p2ms_sum.csv"),
+  fetchCSV("/csv/outputs_p2sh_sum.csv"),
+  fetchCSV("/csv/outputs_p2wsh_sum.csv"),
+  fetchCSV("/csv/outputs_p2tr_sum.csv"),
+  fetchCSV("/csv/outputs_opreturn_sum.csv"),
+  fetchCSV("/csv/outputs_p2a_sum.csv"),
+  fetchCSV("/csv/outputs_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: [], y3: [], y4: [], y5: [], y6: [], y7: [], y8: [], y9: [], y10: []}
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const outs_P2PK = parseFloat(input[1][i].outputs_p2pk_sum)
+    const outs_P2PKH = parseFloat(input[2][i].outputs_p2pkh_sum)
+    const outs_P2WPKH = parseFloat(input[3][i].outputs_p2wpkh_sum)
+    const outs_P2MS = parseFloat(input[4][i].outputs_p2ms_sum)
+    const outs_P2SH = parseFloat(input[5][i].outputs_p2sh_sum)
+    const outs_P2WSH = parseFloat(input[6][i].outputs_p2wsh_sum)
+    const outs_P2TR = parseFloat(input[7][i].outputs_p2tr_sum)
+    const outs_OPRETURN = parseFloat(input[8][i].outputs_opreturn_sum)
+    const outs_P2A = parseFloat(input[9][i].outputs_p2a_sum)
+    
+    const total = parseFloat(input[10][i].outputs_sum)
 
-    const outs_P2PK = parseFloat(data[1][i].outputs_p2pk_sum)
-    const outs_P2PKH = parseFloat(data[2][i].outputs_p2pkh_sum)
-    const outs_P2WPKH = parseFloat(data[3][i].outputs_p2wpkh_sum)
-    const outs_P2MS = parseFloat(data[4][i].outputs_p2ms_sum)
-    const outs_P2SH = parseFloat(data[5][i].outputs_p2sh_sum)
-    const outs_P2WSH = parseFloat(data[6][i].outputs_p2wsh_sum)
-    const outs_P2TR = parseFloat(data[7][i].outputs_p2tr_sum)
-    const outs_OPRETURN = parseFloat(data[8][i].outputs_opreturn_sum)
-
-    const total = outs_P2PK + outs_P2PKH + outs_P2WPKH + outs_P2MS + outs_P2SH + outs_OPRETURN + outs_P2WSH + outs_P2TR
+    const counted_total = outs_P2PK + outs_P2PKH + outs_P2WPKH + outs_P2MS + outs_P2SH + outs_OPRETURN + outs_P2WSH + outs_P2TR + outs_P2A
+    const outs_other = total - counted_total
 
     const outs_P2PK_percentage = outs_P2PK / total || 0
     const outs_P2PKH_percentage = outs_P2PKH / total || 0
@@ -36,19 +45,53 @@ function preprocess(data) {
     const outs_P2WSH_percentage = outs_P2WSH / total || 0
     const outs_P2TR_percentage = outs_P2TR / total || 0
     const outs_OPRETURN_percentage = outs_OPRETURN / total || 0
-
-    combinedData.push({date, outs_P2PK_percentage, outs_P2PKH_percentage, outs_P2MS_percentage, outs_P2SH_percentage, outs_OPRETURN_percentage, outs_P2WPKH_percentage, outs_P2WSH_percentage, outs_P2TR_percentage})
+    const outs_P2A_percentage = outs_P2A / total || 0
+    const outs_other_percentage = outs_other / total || 0
+    
+    data.y1.push(outs_P2PK_percentage * 100)
+    data.y2.push(outs_P2PKH_percentage * 100)
+    data.y3.push(outs_P2WPKH_percentage * 100)
+    data.y4.push(outs_P2MS_percentage * 100)
+    data.y5.push(outs_P2SH_percentage * 100)
+    data.y6.push(outs_P2WSH_percentage * 100)
+    data.y7.push(outs_P2TR_percentage * 100)
+    data.y8.push(outs_OPRETURN_percentage * 100)
+    data.y9.push(outs_P2A_percentage * 100)
+    data.y10.push(outs_other_percentage * 100)
   }
-
-  return combinedData
-
+  return data
 }
-const startDate = d3.timeParse("%Y-%m-%d")("2016-01-01")
-const annotations = [{'text': 'P2SH Activation', 'date': '2012-04-01'},{'text': 'SegWit Activation', 'date': '2017-07-24'}]
-const keys = ["outs_P2PK_percentage", "outs_P2PKH_percentage", "outs_P2MS_percentage", "outs_OPRETURN_percentage","outs_P2SH_percentage", "outs_P2WPKH_percentage", "outs_P2WSH_percentage", "outs_P2TR_percentage"]
-const colors = {"outs_P2PK_percentage": colorP2PK, "outs_P2PKH_percentage": colorP2PKH, "outs_OPRETURN_percentage": colorOPRETURN, "outs_P2WPKH_percentage": colorP2WPKH, "outs_P2MS_percentage": colorP2MS, "outs_P2SH_percentage": colorP2SH, "outs_P2WSH_percentage": colorP2WSH, "outs_P2TR_percentage": colorP2TR}
-const labels = {"outs_P2PK_percentage": "P2PK", "outs_P2PKH_percentage": "P2PKH", "outs_OPRETURN_percentage": "OP_RETURN", "outs_P2WPKH_percentage": "P2WPKH", "outs_P2MS_percentage": "P2MS", "outs_P2SH_percentage": "P2SH", "outs_P2WSH_percentage": "P2WSH", "outs_P2TR_percentage": "P2TR"}
-const dataType = dataTypePercentage
-const unit = ""
 
-const chartFunction = stackedAreaChart
+function chartDefinition(d) {
+  y1 = zip(d.date, movingAverage(d.y1, movingAverageDays, precision))
+  y2 = zip(d.date, movingAverage(d.y2, movingAverageDays, precision))
+  y3 = zip(d.date, movingAverage(d.y3, movingAverageDays, precision))
+  y4 = zip(d.date, movingAverage(d.y4, movingAverageDays, precision))
+  y5 = zip(d.date, movingAverage(d.y5, movingAverageDays, precision))
+  y6 = zip(d.date, movingAverage(d.y6, movingAverageDays, precision))
+  y7 = zip(d.date, movingAverage(d.y7, movingAverageDays, precision))
+  y8 = zip(d.date, movingAverage(d.y8, movingAverageDays, precision))
+  y9 = zip(d.date, movingAverage(d.y9, movingAverageDays, precision))
+  y10 = zip(d.date, movingAverage(d.y10, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAMES[0], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y1, symbol: "none"},
+      { name: NAMES[1], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y2, symbol: "none"},
+      { name: NAMES[2], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y3, symbol: "none"},
+      { name: NAMES[3], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y4, symbol: "none"},
+      { name: NAMES[4], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y5, symbol: "none"},
+      { name: NAMES[5], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y6, symbol: "none"},
+      { name: NAMES[6], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y7, symbol: "none"},
+      { name: NAMES[7], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y8, symbol: "none"},
+      { name: NAMES[8], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y9, symbol: "none"},
+      { name: NAMES[9], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y10, symbol: "none"},
+    ]
+  }
+}

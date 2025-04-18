@@ -1,47 +1,71 @@
-const chartRollingAverage = 7
+// TODO: annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBitcoinCore23, annotationTaprootActivated
+const movingAverageDays = 7
+const NAMES = ["P2WSH", "P2WPKH", "nested P2WSH", "nested P2WPKH", "P2TR key-path", "P2TR script-path"]
+const precision = 1
+let startDate = new Date("2017-08");
 
 const CSVs = [
-  d3.csv("/csv/date.csv"),
-  d3.csv("/csv/inputs_p2wsh_sum.csv"),
-  d3.csv("/csv/inputs_p2wpkh_sum.csv"),
-  d3.csv("/csv/inputs_nested_p2wpkh_sum.csv"),
-  d3.csv("/csv/inputs_nested_p2wsh_sum.csv"),
-  d3.csv("/csv/inputs_p2tr_keypath_sum.csv"),
-  d3.csv("/csv/inputs_p2tr_scriptpath_sum.csv"),
+  fetchCSV("/csv/date.csv"),
+  fetchCSV("/csv/inputs_p2wsh_sum.csv"),
+  fetchCSV("/csv/inputs_p2wpkh_sum.csv"),
+  fetchCSV("/csv/inputs_nested_p2wpkh_sum.csv"),
+  fetchCSV("/csv/inputs_nested_p2wsh_sum.csv"),
+  fetchCSV("/csv/inputs_p2tr_keypath_sum.csv"),
+  fetchCSV("/csv/inputs_p2tr_scriptpath_sum.csv"),
 ]
 
-function preprocess(data) {
-  combinedData = []
-  for (let i = 0; i < data[0].length; i++) {
-    const date = d3.timeParse("%Y-%m-%d")(data[0][i].date)
-    const nativeSH = parseFloat(data[1][i].inputs_p2wsh_sum)
-    const nativePKH = parseFloat(data[2][i].inputs_p2wpkh_sum)
-    const nestedPKH = parseFloat(data[3][i].inputs_nested_p2wpkh_sum)
-    const nestedSH = parseFloat(data[4][i].inputs_nested_p2wsh_sum)
-    const p2trKeypath = parseFloat(data[5][i].inputs_p2tr_keypath_sum)
-    const p2trScriptpath = parseFloat(data[6][i].inputs_p2tr_scriptpath_sum)
+function preprocess(input) {
+  let data = { date: [], y1: [], y2: [], y3: [], y4: [], y5: [], y6: []}
+  for (let i = 0; i < input[0].length; i++) {
+    data.date.push(+(new Date(input[0][i].date)))
+    const nativeSH = parseFloat(input[1][i].inputs_p2wsh_sum)
+    const nativePKH = parseFloat(input[2][i].inputs_p2wpkh_sum)
+    const nestedPKH = parseFloat(input[3][i].inputs_nested_p2wpkh_sum)
+    const nestedSH = parseFloat(input[4][i].inputs_nested_p2wsh_sum)
+    const p2trKeypath = parseFloat(input[5][i].inputs_p2tr_keypath_sum)
+    const p2trScriptpath = parseFloat(input[6][i].inputs_p2tr_scriptpath_sum)
 
     const total = nativeSH + nativePKH + nestedPKH + nestedSH + p2trKeypath + p2trScriptpath
 
-    const P2WSHv0_percentage = nativeSH / total || 0
-    const P2WPKHv0_percentage = nativePKH / total || 0
-    const NestedP2WPKH_percentage = nestedPKH / total || 0
-    const NestedP2WSH_percentage = nestedSH / total || 0
-    const p2trKeypath_percentage = p2trKeypath / total || 0
-    const p2trScriptpath_percentage = p2trScriptpath / total || 0
-
-    combinedData.push({date, NestedP2WPKH_percentage, NestedP2WSH_percentage, P2WPKHv0_percentage, P2WSHv0_percentage, p2trKeypath_percentage, p2trScriptpath_percentage})
+    const y1 = nativeSH / total || 0
+    const y2 = nativePKH / total || 0
+    const y3 = nestedPKH / total || 0
+    const y4 = nestedSH / total || 0
+    const y5 = p2trKeypath / total || 0
+    const y6 = p2trScriptpath / total || 0
+    
+    data.y1.push(y1 * 100)
+    data.y2.push(y2 * 100)
+    data.y3.push(y3 * 100)
+    data.y4.push(y4 * 100)
+    data.y5.push(y5 * 100)
+    data.y6.push(y6 * 100)
   }
-
-  return combinedData
+  return data
 }
 
-const startDate = d3.timeParse("%Y-%m-%d")(annotationSegWitActivated.date) - DAYS31
-const annotations = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBitcoinCore23, annotationTaprootActivated]
-const keys = ["P2WSHv0_percentage", "P2WPKHv0_percentage", "NestedP2WSH_percentage", "NestedP2WPKH_percentage", "p2trKeypath_percentage", "p2trScriptpath_percentage"]
-const colors = {"P2WSHv0_percentage": colorP2WSH, "P2WPKHv0_percentage": colorP2WPKH, "NestedP2WSH_percentage": colorNestedP2WSH, "NestedP2WPKH_percentage": colorNestedP2WPKH, "p2trKeypath_percentage": colorP2TR, "p2trScriptpath_percentage": colorTEAL}
-const labels = {"P2WSHv0_percentage": "P2WSHv0", "P2WPKHv0_percentage": "P2WPKHv0", "NestedP2WSH_percentage": "Nested P2WSH", "NestedP2WPKH_percentage": "Nested P2WPKH", "p2trKeypath_percentage": "P2TR key-path", "p2trScriptpath_percentage": "P2TR script-path"}
-const dataType = dataTypePercentage
-const unit = ""
-
-const chartFunction = stackedAreaChart
+function chartDefinition(d) {
+  y1 = zip(d.date, movingAverage(d.y1, movingAverageDays, precision))
+  y2 = zip(d.date, movingAverage(d.y2, movingAverageDays, precision))
+  y3 = zip(d.date, movingAverage(d.y3, movingAverageDays, precision))
+  y4 = zip(d.date, movingAverage(d.y4, movingAverageDays, precision))
+  y5 = zip(d.date, movingAverage(d.y5, movingAverageDays, precision))
+  y6 = zip(d.date, movingAverage(d.y6, movingAverageDays, precision))
+  return {
+    graphic: watermark(watermarkText),
+    legend: { },
+    toolbox: toolbox(),
+    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
+    dataZoom: [ { type: 'inside', startValue: startDate.toISOString().slice(0, 10) }, { type: 'slider' }],
+    series: [
+      { name: NAMES[0], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y1, symbol: "none"},
+      { name: NAMES[1], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y2, symbol: "none"},
+      { name: NAMES[2], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y3, symbol: "none"},
+      { name: NAMES[3], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y4, symbol: "none"},
+      { name: NAMES[4], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y5, symbol: "none"},
+      { name: NAMES[5], smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: y6, symbol: "none"},
+    ]
+  }
+}
