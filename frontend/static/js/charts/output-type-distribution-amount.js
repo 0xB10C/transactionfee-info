@@ -1,4 +1,4 @@
-// TODO: const annotations = [{'text': 'P2SH Activation', 'date': '2012-04-01'},{'text': 'SegWit Activation', 'date': '2017-07-24'}]
+const ANNOTATIONS = [annotationP2SHActivation, annotationSegWitActivated, annotationTaprootActivated]
 const MOVING_AVERAGE_DAYS = 31
 const NAMES = ["P2PK", "P2PKH", "P2WPKH", "P2MS", "P2SH", "P2WSH", "P2TR", "OP_RETURN", "P2A"]
 const PRECISION = 1
@@ -58,5 +58,5 @@ function preprocess(input) {
 
 function chartDefinition(d) {
   const DATA_KEYS = ["y1", "y2", "y3", "y4", "y5", "y6", "y7", "y8", "y9"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

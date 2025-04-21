@@ -1,3 +1,4 @@
+const ANNOTATIONS = [annotationChinaMiningBan, annotationASICsAvaliable, annotationGPUMinerAvaliable]
 const MOVING_AVERAGE_DAYS = 1
 const NAME = "cumulative work"
 const PRECISION = 2
@@ -24,5 +25,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

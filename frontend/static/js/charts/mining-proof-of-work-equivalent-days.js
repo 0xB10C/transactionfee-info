@@ -1,8 +1,8 @@
-// TODO: annotationChinaMiningBan
+const ANNOTATIONS = [annotationChinaMiningBan, annotationASICsAvaliable, annotationGPUMinerAvaliable]
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "PoW-equivalent days"
 const PRECISION = 0
-let START_DATE =  new Date("2017");
+let START_DATE =  new Date("2010");
 const UNIT = "days"
 
 const CSVs = [
@@ -34,5 +34,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

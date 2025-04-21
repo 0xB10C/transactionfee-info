@@ -1,8 +1,8 @@
+const ANNOTATIONS = [annotationASICsAvaliable, annotationGPUMinerAvaliable]
 const MOVING_AVERAGE_DAYS = 1
 const NAME = "cumulative log2(work)"
 const PRECISION = 2
 let START_DATE =  new Date("2009-01-01");
-
 
 const CSVs = [
   fetchCSV("/csv/date.csv"),
@@ -25,5 +25,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

@@ -1,4 +1,4 @@
-// TODO: annotationChinaMiningBan
+const ANNOTATIONS = [annotationChinaMiningBan]
 const MOVING_AVERAGE_DAYS = 7
 const NAMES = ["Hashrate", "Difficulty"]
 const PRECISION = 0

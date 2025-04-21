@@ -1,3 +1,4 @@
+const ANNOTATIONS = []
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "Foundry share"
 const PRECISION = 2
@@ -24,5 +25,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

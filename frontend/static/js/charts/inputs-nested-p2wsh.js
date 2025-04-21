@@ -1,10 +1,8 @@
-// start date annotationSegWitActivated
-// annotation annotationSegWitActivated
+const ANNOTATIONS = [annotationSegWitActivated]
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "nested P2WSH inputs"
 const PRECISION = 0
-let START_DATE =  new Date();
-START_DATE.setFullYear(new Date().getFullYear() - 3);
+let START_DATE =  new Date("2017");
 
 const CSVs = [
   fetchCSV("/csv/date.csv"),
@@ -21,5 +19,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

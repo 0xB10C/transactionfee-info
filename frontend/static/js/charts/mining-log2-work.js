@@ -1,4 +1,4 @@
-// TODO: annotationChinaMiningBan
+const ANNOTATIONS = [annotationChinaMiningBan]
 const MOVING_AVERAGE_DAYS = 1
 const NAME = "log2(work)"
 const PRECISION = 2
@@ -20,5 +20,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

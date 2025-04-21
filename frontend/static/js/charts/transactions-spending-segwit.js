@@ -1,6 +1,4 @@
-// TODO: annotation segwit
-// TODO: annotationBitcoinCoreSegWitWalletReleased
-// TODO: annotationBlockchainComSegwit
+const ANNOTATIONS = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBlockchainComSegwit]
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "Transactions spending SegWit"
 const PRECISION = 2
@@ -23,5 +21,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

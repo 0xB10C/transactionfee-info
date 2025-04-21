@@ -1,5 +1,5 @@
-// TODO: const annotations = [{'text': 'BIP-68 Activation', 'date': '2016-07-04'}]
-const MOVING_AVERAGE_DAYS = 7
+const ANNOTATIONS = [{'text': 'BIP-68 Activation', 'date': '2016-07-04'}]
+const MOVING_AVERAGE_DAYS = 31
 const NAMES = ["v1", "v2", "v3", "unknown version"]
 const PRECISION = 1
 let START_DATE =  new Date("2016");
@@ -32,5 +32,5 @@ function preprocess(input) {
 
 function chartDefinition(d) {
   const DATA_KEYS = ["v1", "v2", "v3", "version_unknown"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

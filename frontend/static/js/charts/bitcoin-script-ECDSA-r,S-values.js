@@ -1,5 +1,5 @@
-// TODO: annotationBitcoinCorev0_17, annotationBitcoinCorev0_9, annotationBitcoinCorev0_11_1
-const MOVING_AVERAGE_DAYS = 7
+const ANNOTATIONS = [annotationBitcoinCorev0_17, annotationBitcoinCorev0_9, annotationBitcoinCorev0_11_1]
+const MOVING_AVERAGE_DAYS = 31
 const NAMES = ["low r & low S", "high r & high S", "low r & high S", "high r & low S"]
 const PRECISION = 1
 let START_DATE =  new Date("2011");
@@ -38,5 +38,5 @@ function preprocess(input) {
 
 function chartDefinition(d) {
   const DATA_KEYS = ["y1", "y2", "y3", "y4"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

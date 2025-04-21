@@ -1,4 +1,4 @@
-// TODO: annotationChinaMiningBan
+const ANNOTATIONS = [annotationChinaMiningBan]
 const MOVING_AVERAGE_DAYS = 1
 const NAME = "work"
 const PRECISION = 0
@@ -26,7 +26,7 @@ function chartDefinition(d) {
     tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
     yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
   }
-  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
   return {...option, ...EXTRA};
 }
 

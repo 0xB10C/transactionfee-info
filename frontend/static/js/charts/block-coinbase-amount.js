@@ -1,4 +1,9 @@
-// TODO: halvening annotations
+const ANNOTATIONS = [
+  { 'text': '1st halving', 'date': '2012-11-28' },
+  { 'text': '2nd halving', 'date': '2016-07-09' },
+  { 'text': '3rd halving', 'date': '2020-05-11' }, 
+  { 'text': '4th halving', 'date': '2024-04-20' } 
+]
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "Coinbase output value"
 const PRECISION = 8
@@ -20,5 +25,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

@@ -1,3 +1,4 @@
+const ANNOTATIONS = []
 const MOVING_AVERAGE_DAYS = 31
 const PRECISION = 2
 let START_DATE =  new Date("2014-03");

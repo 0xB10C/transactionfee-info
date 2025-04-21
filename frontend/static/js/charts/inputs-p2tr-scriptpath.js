@@ -1,3 +1,4 @@
+const ANNOTATIONS = [annotationTaprootActivated]
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "P2TR script-path inputs"
 const PRECISION = 0
@@ -19,5 +20,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

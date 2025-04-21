@@ -1,3 +1,4 @@
+const ANNOTATIONS = []
 const MOVING_AVERAGE_DAYS = 7
 const NAMES = ["inputs", "outputs"]
 const PRECISION = 0
@@ -25,5 +26,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

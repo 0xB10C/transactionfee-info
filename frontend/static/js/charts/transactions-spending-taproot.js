@@ -1,4 +1,4 @@
-// TODO: annotationTaprootLockedIn, annotationTaprootActivated, annotationBitcoinCore23
+const ANNOTATIONS = [annotationTaprootLockedIn, annotationTaprootActivated, annotationBitcoinCore23, annotationInscriptionsHype]
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "Transactions spending Taproot"
 const PRECISION = 2
@@ -21,5 +21,5 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

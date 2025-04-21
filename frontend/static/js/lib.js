@@ -3,34 +3,27 @@
 var chart
 var preProcessedData
 
-const colorNAVY = "#001f3f"
-const colorBLUE = "#0074D9"
-const colorAQUA = "#7FDBFF"
-const colorTEAL = "#39CCCC"
-const colorOLIVE = "#3D9970"
-const colorGREEN = "#2ECC40"
-const colorLIME = "#01FF70"
-const colorYELLOW = "#FFDC00"
-const colorORANGE = "#FF851B"
-const colorRED = "#FF4136"
-const colorMAROON = "#85144b"
-const colorFUCHSIA = "#F012BE"
-const colorPURPLE = "#B10DC9"
-const colorBLACK = "#111111"
-const colorDARKGRAY = "#444444"
-const colorGRAY = "#AAAAAA"
-const colorSILVER = "#DDDDDD"
-
-const colorOPRETURN = colorLIME
-const colorP2PK = colorGRAY
-const colorP2PKH = colorRED
-const colorNestedP2WPKH = colorAQUA
-const colorP2WPKH = colorPURPLE
-const colorP2MS = colorNAVY
-const colorP2SH = colorYELLOW
-const colorNestedP2WSH = colorORANGE
-const colorP2WSH = colorBLUE
-const colorP2TR = colorMAROON
+const annotationBitcoinQTv0_6 = {'text': 'Bitcoin-QT v0.6 release', 'date': '2012-03-30'} // https://bitcoin.org/en/release/v0.6.0
+const annotationBitcoinQTv0_7 = {'text': 'Bitcoin-QT v0.7 release', 'date': '2012-09-17'} // https://bitcoin.org/en/release/v0.7.0
+const annotationBitcoinQTv0_8 = {'text': 'Bitcoin-QT v0.8 release', 'date': '2013-02-19'}
+const annotationBitcoinCorev0_9 = {'text': 'Bitcoin Core v0.9.0 release', 'date': '2014-03-19'}
+const annotationBitcoinCorev0_10 = {'text': 'Bitcoin Core v0.10.0 release', 'date': '2015-02-16'}
+const annotationBIP66Activated = {'text': 'BIP66 Activation', 'date': '2015-07-04'}
+const annotationBitcoinCorev0_11_1 = {'text': 'Bitcoin Core v0.11.1 release', 'date': '2015-10-15'}
+const annotationBitcoinCoreSegWitWalletReleased = {'text': 'Bitcoin Core SegWit wallet released', 'date': '2018-02-26'}
+const annotationSegWitActivated = {'text': 'SegWit Activation', 'date': '2017-08-24'}
+const annotationBitcoinCorev0_17 = {'text': 'Bitcoin Core v0.17.0 release', 'date': '2018-10-03'}
+const annotationBitcoinCorev0_19 = {'text': 'Bitcoin Core v0.19.0.1 release', 'date': '2019-11-24'}
+const annotationBlockchainComSegwit = {'text': 'Blockchain.com wallet supports SegWit ', 'date': '2021-06-02'}
+const annotationTaprootLockedIn = {'text': 'Taproot soft-fork locked-in', 'date': '2021-06-12'}
+const annotationTaprootActivated = {'text': 'Taproot soft-fork activated', 'date': '2021-11-14'}
+const annotationBitcoinCore23 = {'text': 'Bitcoin Core v23 released', 'date': '2022-04-25'}
+const annotationChinaMiningBan = {'text': 'China mining ban', 'date': '2021-05-21'}
+const annotationASICsAvaliable = {'text': 'First ASIC miners avaliable', 'date': '2013-08-01'} 
+const annotationGPUMinerAvaliable = {'text': 'First GPU miners avaliable', 'date': '2010-07-01'}
+const annotationP2SHActivation = {'text': 'P2SH Activation', 'date': '2012-04-01'}
+const annotationInscriptionsHype = {'text': 'Inscriptions hype', 'date': '2023-04-15'}
+const annotationRunestones = {'text': 'Runestones', 'date': '2024-04-21'}
 
 const zip = (a, b) => a.map((k, i) => [k, b[i]]);
 
@@ -40,7 +33,7 @@ const thumbnailTool = {
   title: "save Thumbnail",
   icon: "path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891",
   onclick: function (){
-    safeThumbnail()
+    saveThumbnail()
   }
 }
 const toolbox = () => {return { show: true, feature: { myThumbnailTool: thumbnailTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}}};
@@ -83,7 +76,7 @@ function movingAverage(data, windowSize, precision = 0) {
 }
 
 async function draw(option) {
-  chart = echarts.init(document.getElementById("chart"));
+  chart = echarts.init(document.getElementById("chart"), 'kelly');
   chart.setOption(option);
 }
 
@@ -110,7 +103,7 @@ function formatPercentage(v) {
   return v + "%";
 }
 
-function safeThumbnail() {
+function saveThumbnail() {
   draw({
     grid: {
       top: 0,
@@ -128,6 +121,10 @@ function safeThumbnail() {
     graphic: {show: false},
     animation: false,
     animationDuration: 0,
+    series: chart.getOption().series.map(s => {
+      s.markLine = { label: { show: false }, lineStyle: {width: 0}};
+      return s
+    })
   });
   const canvas = chart.getRenderedCanvas({
     backgroundColor: '#ffffff',
@@ -142,7 +139,7 @@ function safeThumbnail() {
 
 // Single line (area) chart
 // expects date and y
-function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
   y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
   return {
     ...BASE_CHART_OPTION,
@@ -150,14 +147,16 @@ function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
     yAxis: { type: 'value', name: NAME },
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
-      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } }
+      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
     ]
   }
 }
 
 // Area chart showing a precentage
 // expects date and y (between 0 and 100)
-function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
   y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
   return {
     ...BASE_CHART_OPTION,
@@ -165,14 +164,16 @@ function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
-      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%',   itemStyle: { borderWidth: 0 } }
+      { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
     ]
   }
 }
 
 // double line chart
 // expects date, y1 and y2
-function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
   y1 = zip(d.date, movingAverage(d.y1, MOVING_AVERAGE_DAYS, PRECISION))
   y2 = zip(d.date, movingAverage(d.y2, MOVING_AVERAGE_DAYS, PRECISION))
   return {
@@ -182,14 +183,16 @@ function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
       { name: NAMES[0], smooth: false, type: 'line', data: y1, symbol: "none"},
-      { name: NAMES[1], smooth: false, type: 'line', data: y2, symbol: "none"}
+      { name: NAMES[1], smooth: false, type: 'line', data: y2, symbol: "none"},
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
     ]
   }
 }
 
 // stacked area chart
 // expects date, and multiple DATA_KEYS entries
-function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE) {
+function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
   if (DATA_KEYS.length != NAMES.length) {
     alert("DATA_KEYS length does not match NAMES length!");
     return
@@ -202,7 +205,11 @@ function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PR
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
       return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, movingAverage(d[key], MOVING_AVERAGE_DAYS, PRECISION)), symbol: "none"}
-    }),
+    }).concat(
+    [
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop", backgroundColor: "transparent"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+    ]),
   }
 }
 

@@ -1,3 +1,4 @@
+const ANNOTATIONS = []
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "Inputs per Outputs"
 const PRECISION = 2
@@ -21,7 +22,7 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
   option.series[0]["markLine"] = {
     symbol: "none",
     data: [

@@ -1,4 +1,4 @@
-// TODO: annotationSegWitActivated
+const ANNOTATIONS = [annotationSegWitActivated]
 const MOVING_AVERAGE_DAYS = 7
 const NAMES = ["Payments", "Block size"]
 const PRECISION = 0
@@ -46,8 +46,8 @@ function chartDefinition(d) {
     ],
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
-      { name: NAMES[0], yAxisIndex: 0, smooth: false, areaStyle: {}, color: colorBLUE, type: 'line', data: y1, symbol: "none"},
-      { name: NAMES[1], yAxisIndex: 1, smooth: false, areaStyle: {}, color: colorGRAY, type: 'line', data: y2, symbol: "none"}
+      { name: NAMES[0], yAxisIndex: 0, smooth: false, areaStyle: {}, type: 'line', data: y1, symbol: "none"},
+      { name: NAMES[1], yAxisIndex: 1, smooth: false, areaStyle: {}, type: 'line', data: y2, symbol: "none"}
     ]
   }
 }

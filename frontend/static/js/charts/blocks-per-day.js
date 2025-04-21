@@ -1,5 +1,4 @@
-// TODO: vertial line at 144
-// TODO: average line
+const ANNOTATIONS = []
 const MOVING_AVERAGE_DAYS = 7
 const NAME = "blocks per day"
 const PRECISION = 0
@@ -21,5 +20,10 @@ function preprocess(input) {
 }
 
 function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE)
+  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  option.series.push(
+    // Annotations:
+    { type: "line", markLine: { symbol: "none", lineStyle: { color:"gray", type: "dotted" }, data: [{ name: "144", yAxis: 144, label: { formatter: "144 blocks" } }] } },
+  )
+  return option;
 }

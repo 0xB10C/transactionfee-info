@@ -1,5 +1,5 @@
-// TODO: [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased]
-const MOVING_AVERAGE_DAYS = 7
+const ANNOTATIONS = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased]
+const MOVING_AVERAGE_DAYS = 31
 const NAMES = ["legacy only", "mixed", "SegWit only"]
 const PRECISION = 1
 let START_DATE =  new Date("2017");
@@ -32,5 +32,5 @@ function preprocess(input) {
 
 function chartDefinition(d) {
   const DATA_KEYS = ["y1", "y2", "y3"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }

@@ -1,4 +1,4 @@
-// TODO: annotationBIP66Activated
+const ANNOTATIONS = [annotationBIP66Activated]
 const MOVING_AVERAGE_DAYS = 31
 const NAMES = ["DER encoded", "not DER encoded"]
 const PRECISION = 1
@@ -31,5 +31,5 @@ function preprocess(input) {
 
 function chartDefinition(d) {
   const DATA_KEYS = ["y1", "y2"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
 }
