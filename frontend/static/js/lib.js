@@ -165,7 +165,8 @@ function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE
   return {
     ...BASE_CHART_OPTION,
     xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: function (value) { return value + '%'; } } },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
+    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
       { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
