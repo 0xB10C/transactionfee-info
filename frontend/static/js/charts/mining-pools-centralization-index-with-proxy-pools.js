@@ -50,8 +50,9 @@ function chartDefinition(d) {
   return {
     ...BASE_CHART_OPTION,
     xAxis: { type: "time" },
-    yAxis: { type: 'value' },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
+    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
     series: ["y1", "y2", "y3", "y4", "y5"].map((y) => {
       return {
         name: labels[y],
