@@ -39,6 +39,10 @@ const thumbnailTool = {
 const toolbox = () => {return { show: true, feature: { myThumbnailTool: thumbnailTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}}};
 
 const BASE_CHART_OPTION = {
+  grid: {
+    left: "7%",
+    right: "7%",
+  },
   graphic: watermark(watermarkText),
   legend: { },
   animation: false,
@@ -144,7 +148,7 @@ function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATI
   return {
     ...BASE_CHART_OPTION,
     xAxis: { type: "time", data: d.date },
-    yAxis: { type: 'value', name: NAME },
+    yAxis: { type: 'value' },
     dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
       { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
