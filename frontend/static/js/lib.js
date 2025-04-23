@@ -36,18 +36,21 @@ const thumbnailTool = {
     saveThumbnail()
   }
 }
-const toolbox = () => {return { show: true, feature: { myThumbnailTool: thumbnailTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}}};
+const toolbox = { show: true, feature: { myThumbnailTool: thumbnailTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}};
 
-const BASE_CHART_OPTION = {
-  grid: {
-    left: "7%",
-    right: "7%",
-  },
-  graphic: watermark(watermarkText),
-  legend: { },
-  animation: false,
-  toolbox: toolbox(),
-  tooltip: { trigger: 'axis' },
+const BASE_CHART_OPTION = (START_DATE) => {
+  return {
+    grid: {
+      left: "7%",
+      right: "7%",
+    },
+    graphic: watermark(watermarkText),
+    legend: { },
+    animation: false,
+    toolbox: toolbox,
+    tooltip: { trigger: 'axis' },
+    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider', brushSelect: false, showDetails: false, handleSize: 30 }],
+  }
 }
 
 async function fetchCSV(url) {
@@ -146,10 +149,9 @@ function saveThumbnail() {
 function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
   y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
   return {
-    ...BASE_CHART_OPTION,
+    ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "time", data: d.date },
     yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
       { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
       // Annotations:
@@ -163,11 +165,10 @@ function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATI
 function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
   y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
   return {
-    ...BASE_CHART_OPTION,
+    ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "time", data: d.date },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
     tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
-    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
       { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
       // Annotations:
@@ -182,10 +183,9 @@ function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, A
   y1 = zip(d.date, movingAverage(d.y1, MOVING_AVERAGE_DAYS, PRECISION))
   y2 = zip(d.date, movingAverage(d.y2, MOVING_AVERAGE_DAYS, PRECISION))
   return {
-    ...BASE_CHART_OPTION,
+    ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "time", data: d.date },
     yAxis: { type: 'value' },
-    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
       { name: NAMES[0], smooth: false, type: 'line', data: y1, symbol: "none"},
       { name: NAMES[1], smooth: false, type: 'line', data: y2, symbol: "none"},
@@ -203,11 +203,10 @@ function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PR
     return
   }
   return {
-    ...BASE_CHART_OPTION,
+    ...BASE_CHART_OPTION(START_DATE),
     tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
     xAxis: { type: "time", data: d.date },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
-    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
       return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, movingAverage(d[key], MOVING_AVERAGE_DAYS, PRECISION)), symbol: "none"}
     }).concat(

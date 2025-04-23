@@ -28,7 +28,7 @@ function chartDefinition(d) {
   y1 = zip(d.date, movingAverage(d.y1, MOVING_AVERAGE_DAYS, PRECISION))
   y2 = zip(d.date, movingAverage(d.y2, MOVING_AVERAGE_DAYS, PRECISION))
   return {
-    ...BASE_CHART_OPTION,
+    ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "time", data: d.date },
     yAxis: [
       {
@@ -44,7 +44,6 @@ function chartDefinition(d) {
         axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT_BYTE)}
       }
     ],
-    dataZoom: [ { type: 'inside', startValue: START_DATE.toISOString().slice(0, 10) }, { type: 'slider' }],
     series: [
       { name: NAMES[0], yAxisIndex: 0, smooth: false, areaStyle: {}, type: 'line', data: y1, symbol: "none"},
       { name: NAMES[1], yAxisIndex: 1, smooth: false, areaStyle: {}, type: 'line', data: y2, symbol: "none"}
