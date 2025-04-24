@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationSegWitActivated]
-const MOVING_AVERAGE_DAYS = 31
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
 const NAMES = ["P2SH", "nested P2WPKH", "nested P2WSH"]
 const PRECISION = 1
 let START_DATE =  new Date("2016");
@@ -33,7 +33,7 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
+function chartDefinition(d, movingAverage) {
   const DATA_KEYS = ["y1", "y2", "y3"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
 }

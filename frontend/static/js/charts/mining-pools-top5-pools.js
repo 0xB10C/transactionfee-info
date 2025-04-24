@@ -1,5 +1,5 @@
 const ANNOTATIONS = []
-const MOVING_AVERAGE_DAYS = 31
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
 const PRECISION = 2
 let START_DATE =  new Date();
 START_DATE.setFullYear(new Date().getFullYear() - 5);
@@ -32,7 +32,7 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
+function chartDefinition(d, movingAverage) {
   return {
     ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "" },
@@ -43,7 +43,7 @@ function chartDefinition(d) {
         name: n,
         type: "line",
         symbol: 'none',
-        data: zip(d.date, movingAverage(d.pools[n], MOVING_AVERAGE_DAYS, PRECISION)),
+        data: zip(d.date, calcMovingAverage(d.pools[n], movingAverage, PRECISION)),
         smooth: true,
       }
     }),

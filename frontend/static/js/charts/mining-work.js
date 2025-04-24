@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationChinaMiningBan]
-const MOVING_AVERAGE_DAYS = 1
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_1D
 const NAME = "work"
 const PRECISION = 0
 let START_DATE =  new Date("2009-01-01");
@@ -21,12 +21,12 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
+function chartDefinition(d, movingAverage) {
   const EXTRA = {
     tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
     yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
   }
-  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  let option = lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
   return {...option, ...EXTRA};
 }
 

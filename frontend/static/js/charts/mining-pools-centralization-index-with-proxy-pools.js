@@ -1,5 +1,5 @@
 const ANNOTATIONS = []
-const MOVING_AVERAGE_DAYS = 31
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
 const PRECISION = 2
 let START_DATE =  new Date("2014-03");
 
@@ -38,7 +38,7 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
+function chartDefinition(d, movingAverage) {
   const labels = {
     "y1": "top 2 pools",
     "y2": "top 3 pools",
@@ -57,7 +57,7 @@ function chartDefinition(d) {
         name: labels[y],
         type: "line",
         symbol: 'none',
-        data: zip(d.date, movingAverage(d[y], MOVING_AVERAGE_DAYS, PRECISION)),
+        data: zip(d.date, calcMovingAverage(d[y], movingAverage, PRECISION)),
         smooth: true,
       }
     }),
