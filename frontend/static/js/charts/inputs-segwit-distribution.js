@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBitcoinCore23, annotationTaprootActivated]
-const MOVING_AVERAGE_DAYS = 31
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
 const NAMES = ["P2WSH", "P2WPKH", "nested P2WSH", "nested P2WPKH", "P2TR key-path", "P2TR script-path"]
 const PRECISION = 1
 let START_DATE =  new Date("2017-08");
@@ -44,7 +44,7 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
+function chartDefinition(d, movingAverage) {
   const DATA_KEYS = ["y1", "y2", "y3", "y4", "y5", "y6"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
 }

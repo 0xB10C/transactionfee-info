@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationChinaMiningBan]
-const MOVING_AVERAGE_DAYS = 7
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_7D
 const NAMES = ["Hashrate", "Difficulty"]
 const PRECISION = 0
 let START_DATE =  new Date();
@@ -29,9 +29,9 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
-  y1 = zip(d.date, movingAverage(d.y1, MOVING_AVERAGE_DAYS, PRECISION))
-  y2 = zip(d.date, movingAverage(d.y2, MOVING_AVERAGE_DAYS, PRECISION))
+function chartDefinition(d, movingAverage) {
+  y1 = zip(d.date, calcMovingAverage(d.y1, movingAverage, PRECISION))
+  y2 = zip(d.date, calcMovingAverage(d.y2, movingAverage, PRECISION))
   return {
     ...BASE_CHART_OPTION(START_DATE),
     tooltip: { trigger: 'axis', valueFormatter: (v) => formatWithSIPrefix(v) },

@@ -1,5 +1,5 @@
 const ANNOTATIONS = []
-const MOVING_AVERAGE_DAYS = 7
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_7D
 const NAME = "AntPool & friends share"
 const PRECISION = 2
 
@@ -31,6 +31,6 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
-  return areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+function chartDefinition(d, movingAverage) {
+  return areaPercentageChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
 }

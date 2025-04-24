@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBitcoinCore23, annotationTaprootActivated, annotationP2SHActivation]
-const MOVING_AVERAGE_DAYS = 31
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
 const NAMES = ["P2PK", "P2PKH", "nested P2WPKH", "P2WPKH", "P2MS", "P2SH", "nested P2WSH", "P2WSH", "P2TR key-path", "P2TR script-path", "Unknown", "Coinbase", "P2A", "other"]
 const PRECISION = 1
 let START_DATE =  new Date("2015");
@@ -91,7 +91,7 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
+function chartDefinition(d, movingAverage) {
   const DATA_KEYS = ["p2pk", "p2pkh", "nested_p2wpkh", "p2wpkh", "p2ms", "p2sh", "nested_p2wsh", "p2wsh", "p2tr_keypath", "p2tr_scriptpath", "unknown", "coinbase", "p2a", "other"]
-  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+  return stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
 }

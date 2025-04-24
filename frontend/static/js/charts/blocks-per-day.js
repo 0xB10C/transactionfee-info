@@ -1,5 +1,5 @@
 const ANNOTATIONS = []
-const MOVING_AVERAGE_DAYS = 7
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_7D
 const NAME = "blocks per day"
 const PRECISION = 0
 let START_DATE =  new Date();
@@ -19,8 +19,8 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
-  let option = lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+function chartDefinition(d, movingAverage) {
+  let option = lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
   option.series.push(
     // Annotations:
     { type: "line", markLine: { symbol: "none", lineStyle: { color:"gray", type: "dotted" }, data: [{ name: "144", yAxis: 144, label: { formatter: "144 blocks" } }] } },

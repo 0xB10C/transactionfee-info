@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationRunestones]
-const MOVING_AVERAGE_DAYS = 7
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_7D
 const NAME = "OP_RETURN outputs"
 const PRECISION = 0
 let START_DATE =  new Date("2015");
@@ -18,6 +18,6 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
-  return lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+function chartDefinition(d, movingAverage) {
+  return lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
 }

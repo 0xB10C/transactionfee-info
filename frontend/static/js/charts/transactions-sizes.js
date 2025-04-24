@@ -1,5 +1,5 @@
 const ANNOTATIONS = []
-const MOVING_AVERAGE_DAYS = 7
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_7D
 const NAMES = ["vsize", "size"]
 const PRECISION = 0
 let START_DATE =  new Date();
@@ -25,6 +25,6 @@ function preprocess(input) {
   return data
 }
 
-function chartDefinition(d) {
-  return doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS);
+function chartDefinition(d, movingAverage) {
+  return doubleLineChart(d, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
 }

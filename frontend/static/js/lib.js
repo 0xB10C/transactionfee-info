@@ -1,7 +1,10 @@
 /* Shared code to load data and render charts */
 
+const movingAverageSelect = document.getElementById('maSelector')
+
 var chart
 var preProcessedData
+var currentMovingAverage = 0
 
 const annotationBitcoinQTv0_6 = {'text': 'Bitcoin-QT v0.6 release', 'date': '2012-03-30'} // https://bitcoin.org/en/release/v0.6.0
 const annotationBitcoinQTv0_7 = {'text': 'Bitcoin-QT v0.7 release', 'date': '2012-09-17'} // https://bitcoin.org/en/release/v0.7.0
@@ -24,6 +27,11 @@ const annotationGPUMinerAvaliable = {'text': 'First GPU miners avaliable', 'date
 const annotationP2SHActivation = {'text': 'P2SH Activation', 'date': '2012-04-01'}
 const annotationInscriptionsHype = {'text': 'Inscriptions hype', 'date': '2023-04-15'}
 const annotationRunestones = {'text': 'Runestones', 'date': '2024-04-21'}
+
+const MOVING_AVERAGE_1D = 1
+const MOVING_AVERAGE_7D = 7
+const MOVING_AVERAGE_31D = 31
+const MOVING_AVERAGE_90D = 90
 
 const zip = (a, b) => a.map((k, i) => [k, b[i]]);
 
@@ -68,7 +76,7 @@ function parseCSV(text) {
   });
 }
 
-function movingAverage(data, windowSize, precision = 0) {
+function calcMovingAverage(data, windowSize, precision = 0) {
   const result = [];
   for (let i = 0; i < data.length; i++) {
     if (i < windowSize - 1) {
@@ -146,8 +154,8 @@ function saveThumbnail() {
 
 // Single line (area) chart
 // expects date and y
-function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
-  y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
+function lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS = []) {
+  y = zip(d.date, calcMovingAverage(d.y, movingAverage, PRECISION))
   return {
     ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "time", data: d.date },
@@ -162,8 +170,8 @@ function lineChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATI
 
 // Area chart showing a precentage
 // expects date and y (between 0 and 100)
-function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
-  y = zip(d.date, movingAverage(d.y, MOVING_AVERAGE_DAYS, PRECISION))
+function areaPercentageChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS = []) {
+  y = zip(d.date, calcMovingAverage(d.y, movingAverage, PRECISION))
   return {
     ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "time", data: d.date },
@@ -179,9 +187,9 @@ function areaPercentageChart(d, NAME, MOVING_AVERAGE_DAYS, PRECISION, START_DATE
 
 // double line chart
 // expects date, y1 and y2
-function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
-  y1 = zip(d.date, movingAverage(d.y1, MOVING_AVERAGE_DAYS, PRECISION))
-  y2 = zip(d.date, movingAverage(d.y2, MOVING_AVERAGE_DAYS, PRECISION))
+function doubleLineChart(d, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS = []) {
+  y1 = zip(d.date, calcMovingAverage(d.y1, movingAverage, PRECISION))
+  y2 = zip(d.date, calcMovingAverage(d.y2, movingAverage, PRECISION))
   return {
     ...BASE_CHART_OPTION(START_DATE),
     xAxis: { type: "time", data: d.date },
@@ -197,7 +205,7 @@ function doubleLineChart(d, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, A
 
 // stacked area chart
 // expects date, and multiple DATA_KEYS entries
-function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PRECISION, START_DATE, ANNOTATIONS = []) {
+function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS = []) {
   if (DATA_KEYS.length != NAMES.length) {
     alert("DATA_KEYS length does not match NAMES length!");
     return
@@ -208,7 +216,7 @@ function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PR
     xAxis: { type: "time", data: d.date },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
     series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
-      return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, movingAverage(d[key], MOVING_AVERAGE_DAYS, PRECISION)), symbol: "none"}
+      return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, calcMovingAverage(d[key], movingAverage, PRECISION)), symbol: "none"}
     }).concat(
     [
       // Annotations:
@@ -218,9 +226,20 @@ function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, MOVING_AVERAGE_DAYS, PR
 }
 
 window.onload = function () {
+  currentMovingAverage = MOVING_AVERAGE_DAYS
+  // set the default moving average value in the HTML select
+  movingAverageSelect.value = currentMovingAverage
+
+  document.getElementById('maSelector').addEventListener('change', (e) => {
+    const selected = Number(e.target.value);
+    currentMovingAverage = selected
+    let option = chartDefinition(processedData, currentMovingAverage)
+    chart.setOption(option);
+  });
+
   Promise.all(CSVs).then(function(data) {
     processedData = preprocess(data)
-    let option = chartDefinition(processedData)
+    let option = chartDefinition(processedData, currentMovingAverage)
     draw(option)
   });
 }
