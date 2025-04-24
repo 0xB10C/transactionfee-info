@@ -5,6 +5,7 @@ const movingAverageSelect = document.getElementById('maSelector')
 var chart
 var preProcessedData
 var currentMovingAverage = 0
+var showAnnotations = true
 
 const annotationBitcoinQTv0_6 = {'text': 'Bitcoin-QT v0.6 release', 'date': '2012-03-30'} // https://bitcoin.org/en/release/v0.6.0
 const annotationBitcoinQTv0_7 = {'text': 'Bitcoin-QT v0.7 release', 'date': '2012-09-17'} // https://bitcoin.org/en/release/v0.7.0
@@ -40,11 +41,19 @@ const thumbnailTool = {
   show: isDevBuild,
   title: "save Thumbnail",
   icon: "path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891",
+  onclick: saveThumbnail,
+}
+const annotationToggleTool = {
+  show: true,
+  title: "toggle annotations",
+  icon: 'path://M16,6m-2,0a2,2 0 1,0 4,0a2,2 0 1,0 -4,0M16,12m-2,0a2,2 0 1,0 4,0a2,2 0 1,0 -4,0M16,18m-2,0a2,2 0 1,0 4,0a2,2 0 1,0 -4,0M16,24m-2,0a2,2 0 1,0 4,0a2,2 0 1,0 -4,0M16,30m-2,0a2,2 0 1,0 4,0a2,2 0 1,0 -4,0',
   onclick: function (){
-    saveThumbnail()
+    showAnnotations = !showAnnotations;
+    let option = chartDefinition(processedData, currentMovingAverage)
+    chart.setOption(option);
   }
 }
-const toolbox = { show: true, feature: { myThumbnailTool: thumbnailTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}};
+const toolbox = { show: true, feature: { myThumbnailTool: thumbnailTool, myAnnotationTool: annotationToggleTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}};
 
 const BASE_CHART_OPTION = (START_DATE) => {
   return {
@@ -163,7 +172,7 @@ function lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS = 
     series: [
       { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
       // Annotations:
-      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+      { type: "line", markLine: { symbol: "none", label:{show: showAnnotations, position:"insideEndTop"}, lineStyle: { color: showAnnotations ? "gray": "transparent", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
     ]
   }
 }
@@ -180,7 +189,7 @@ function areaPercentageChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNO
     series: [
       { name: NAME, smooth: true, type: 'line', areaStyle: {}, data: y, symbol: "none", barCategoryGap: '0%', barGap: '0%', barWidth: '100%', itemStyle: { borderWidth: 0 } },
       // Annotations:
-      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+      { type: "line", markLine: { symbol: "none", label:{show: showAnnotations, position:"insideEndTop"}, lineStyle: { color: showAnnotations ? "gray": "transparent", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
     ]
   }
 }
@@ -198,7 +207,7 @@ function doubleLineChart(d, NAMES, movingAverage, PRECISION, START_DATE, ANNOTAT
       { name: NAMES[0], smooth: false, type: 'line', data: y1, symbol: "none"},
       { name: NAMES[1], smooth: false, type: 'line', data: y2, symbol: "none"},
       // Annotations:
-      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+      { type: "line", markLine: { symbol: "none", label:{show: showAnnotations, position:"insideEndTop"}, lineStyle: { color: showAnnotations ? "gray": "transparent", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
     ]
   }
 }
@@ -220,7 +229,7 @@ function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISIO
     }).concat(
     [
       // Annotations:
-      { type: "line", markLine: { symbol: "none", label:{position:"insideEndTop", backgroundColor: "transparent"}, lineStyle: { color:"gray", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+      { type: "line", markLine: { symbol: "none", label:{show: showAnnotations, position:"insideEndTop", backgroundColor: "transparent"}, lineStyle: { color: showAnnotations ? "gray": "transparent", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
     ]),
   }
 }
