@@ -1,11 +1,11 @@
 use corepc_node as bitcoind;
 use diesel::SqliteConnection;
 use log::{error, info};
+use mainnet_observer_backend::{collect_statistics, db, write_csv_files, REORG_SAFETY_MARGIN};
 use rand::distr::{Alphanumeric, SampleString};
 use std::env;
 use std::fs;
 use std::sync::{Arc, Mutex};
-use transactionfee_info_backend::{collect_statistics, db, write_csv_files, REORG_SAFETY_MARGIN};
 
 fn init_logger() {
     env_logger::Builder::new()
@@ -102,7 +102,7 @@ fn test_integration_minimal() {
 
     let mut dir = env::temp_dir();
     dir.push(format!(
-        "transactionfee-info-integration-tests-{}",
+        "mainnet-observer-integration-tests-{}",
         Alphanumeric.sample_string(&mut rand::rng(), 16)
     ));
     fs::create_dir_all(&dir).unwrap();

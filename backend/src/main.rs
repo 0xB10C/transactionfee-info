@@ -1,9 +1,9 @@
 use clap::Parser;
 use env_logger::Env;
 use log::error;
+use mainnet_observer_backend::{collect_statistics, db, write_csv_files, Args};
 use std::process::exit;
 use std::sync::{Arc, Mutex};
-use transactionfee_info_backend::{collect_statistics, db, write_csv_files, Args};
 
 const DEFAULT_LOG_LEVEL: &str = "info";
 
