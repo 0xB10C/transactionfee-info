@@ -686,6 +686,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 
 [[package]]
+name = "mainnet-observer-backend"
+version = "0.1.0"
+dependencies = [
+ "bitcoin",
+ "bitcoin-pool-identification",
+ "chrono",
+ "clap",
+ "corepc-node",
+ "diesel",
+ "diesel_migrations",
+ "env_logger",
+ "log",
+ "minreq",
+ "rand",
+ "rawtx-rs",
+ "rayon",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1154,27 +1175,6 @@ dependencies = [
  "serde_spanned",
  "toml_datetime",
  "winnow",
-]
-
-[[package]]
-name = "transactionfee-info-backend"
-version = "0.1.0"
-dependencies = [
- "bitcoin",
- "bitcoin-pool-identification",
- "chrono",
- "clap",
- "corepc-node",
- "diesel",
- "diesel_migrations",
- "env_logger",
- "log",
- "minreq",
- "rand",
- "rawtx-rs",
- "rayon",
- "serde",
- "serde_json",
 ]
 
 [[package]]
