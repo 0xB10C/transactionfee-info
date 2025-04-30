@@ -243,6 +243,12 @@ window.onload = function () {
     const selected = Number(e.target.value);
     currentMovingAverage = selected
     let option = chartDefinition(processedData, currentMovingAverage)
+
+    // keep the start date the same as the current chart when the moving average is changed
+    let xAxisModel = chart.getModel().getComponent('xAxis', 0);
+    let xExtent = xAxisModel.axis.scale.getExtent();
+    let currentStartDate = xExtent[0];
+    option.dataZoom[0].startValue = currentStartDate
     chart.setOption(option);
   });
 
