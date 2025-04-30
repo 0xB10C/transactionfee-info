@@ -54,6 +54,13 @@ const annotationToggleTool = {
   }
 }
 const toolbox = { show: true, feature: { myThumbnailTool: thumbnailTool, myAnnotationTool: annotationToggleTool, dataZoom: { yAxisIndex: 'none' }, restore: {}, saveAsImage: { name: chartPNGFileName }, dataView: {}}};
+const tooltipAxisPointer = {type: "cross"}
+const tooltipPosition = function (pos, _params, _el, _elRect, size) {
+  var obj = { };
+  obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 100;
+  obj[['top', 'bottom'][+(pos[1] < size.viewSize[1] / 2)]] = 100;
+  return obj;
+}
 
 const BASE_CHART_OPTION = (START_DATE) => {
   return {
@@ -221,7 +228,7 @@ function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISIO
   }
   return {
     ...BASE_CHART_OPTION(START_DATE),
-    tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
+    tooltip: { trigger: 'axis', valueFormatter: formatPercentage, axisPointer: tooltipAxisPointer, position: tooltipPosition},
     xAxis: { type: "time", data: d.date },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
     series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
