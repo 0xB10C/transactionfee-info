@@ -1,6 +1,11 @@
-baseURL = "https://transactionfee.info/"
+# Can also be controlled with the HUGO_TITLE env var.
+# FIXME: (unless set via the ENV var)
+title = "PLACEHOLDER-TITLE"
+# Can also be controlled with the HUGO_BASEURL env var.
+# FIXME: (unless set via the ENV var)
+baseURL = "https://placeholder.example.com" 
 languageCode = "en-us"
-title = "transactionfee.info"
+
 relativeURLs = true
 disableHugoGeneratorInject = false
 enableRobotsTXT = true
@@ -8,6 +13,14 @@ enableRobotsTXT = true
 [params]
 description = "Provides protocol-level statistics about Bitcoin: Blocks, Transactions, SegWit and more."
 images = ["/img/twitter-og.png"]
+
+# The HTML in the top right and bottom right can be user specified.
+# For example, you can include a link to your social media profiles,
+# a sponsor, or just leave it blank. These can also be set with the
+# HUGO_PARAMS_HTMLTOPRIGHT and HUGO_PARAMS_HTMLBOTTOMRIGHT env vars.
+# FIXME: (unless set via the ENV var)
+htmlTopRight = "<i>PLACEHOLDER-top-right</i>"
+htmlBottomRight = "<i>PLACEHOLDER-bottom-right</i>"
 
 [taxonomies]
 category = "categories"

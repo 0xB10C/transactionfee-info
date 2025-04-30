@@ -8,51 +8,30 @@
 
   {{ template "_internal/opengraph.html" . }} {{ template "_internal/twitter_cards.html" . }}
 
-  <link rel="apple-touch-icon" sizes="57x57" href="/img/browser-icons/apple-icon-57x57.png">
-  <link rel="apple-touch-icon" sizes="60x60" href="/img/browser-icons/apple-icon-60x60.png">
-  <link rel="apple-touch-icon" sizes="72x72" href="/img/browser-icons/apple-icon-72x72.png">
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/browser-icons/apple-icon-76x76.png">
-  <link rel="apple-touch-icon" sizes="114x114" href="/img/browser-icons/apple-icon-114x114.png">
-  <link rel="apple-touch-icon" sizes="120x120" href="/img/browser-icons/apple-icon-120x120.png">
-  <link rel="apple-touch-icon" sizes="144x144" href="/img/browser-icons/apple-icon-144x144.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/img/browser-icons/apple-icon-152x152.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/img/browser-icons/apple-icon-180x180.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/img/browser-icons/android-icon-192x192.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/img/browser-icons/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="96x96" href="/img/browser-icons/favicon-96x96.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/img/browser-icons/favicon-16x16.png">
-  <link rel="manifest" href="/img/browser-icons/manifest.json">
-  <meta name="msapplication-TileColor" content="#ffffff">
-  <meta name="msapplication-TileImage" content="/img/browser-icons/ms-icon-144x144.png">
-  <meta name="theme-color" content="#ffffff">
-
+  <link rel="icon" type="image/png" href="/img/browser-icons/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/img/browser-icons/favicon.svg" />
+  <link rel="shortcut icon" href="/img/browser-icons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/browser-icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="mainnet-observer" />
+  <link rel="manifest" href="/img/browser-icons/site.webmanifest" />
   <link rel="stylesheet" href="/css/bootstrap.min.css"
     integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <link rel="stylesheet" href="/css/index.css">
-  <script async defer
-          data-website-id="2ba196c5-ff48-4948-97da-512ddc2af753"
-          src="https://umami.b10c.me/b10c.js">
-  </script>
 </head>
 
 <body>
   <nav class="navbar navbar-expand-sm navbar-light bg-light">
     <div class="container">
       <div class="navbar-nav">
-        <a class="navbar-brand umami--click--nav-logo" href="/">
+        <a class="navbar-brand" href="/">
           <h1 class="mb-0">
-            <span style="font-weight:300;">transaction<span
-                style="color: #F84959; font-weight:700;">fee</span>.info</span>
+            {{ .Site.Title }}
           </h1>
           <span class="small text-muted">Bitcoin Protocol Layer Statistics</span>
         </a>
       </div>
       <span class="navbar-text d-none d-md-block">
-        <a href="https://www.bitrefill.com/?utm_source=transactionfee_info" class="umami--click--nav-bitrefill-ad">
-          <img height=48 src="/img/bitrefill-logo.svg" alt="Bitrefill - Buy gift cards with Bitcoin">
-          <br>
-          <span class="text-muted">Buy gift cards with Bitcoin</span>
-        </a>
+        {{ .Site.Params.HtmlTopRight | safeHTML }}
       </span>
     </div>
   </nav>
@@ -66,29 +45,20 @@
     <div class="row text-center">
 
       <div class="col-sm mb-3">
-        <div class="d-flex flex-row text-left justify-content-center">
-          <div style="padding: 4px;">
-            <a href="https://twitter.com/0xb10c" class="umami--click--footer-0xb10c-logo">
-              <img width=48 height=48 src="/img/0xb10c.png" alt="0xB10C logo">
+        <div class="d-flex flex-row justify-content-center">
+          <span>
+            <a target="_blank" rel="noopener" href="https://github.com/0xb10c/mainnet-observer" class="text-dark text-decoration-none">
+              <img src="/img/GitHub-Mark-64px.png" class="mx-1 invert" width="32" height="32" alt="GitHub logo">
+              <span class="text-decoration-underline">mainnet-observer</span>
             </a>
-          </div>
-
-          <div style="padding: 4px;">
-            <span>
-              <a style="color: #b10c00" href="https://twitter.com/0xb10c" class="umami--click--footer-0xb10c-name">0xB10C</a> -
-              <a style="color: #b10c00" href="https://b10c.me" class="umami--click--footer-0xb10c-website">b10c.me</a> <br>
-            </span>
-            <span class="text-muted">bitcoin freelancer</span><br>
-          </div>
+            <br>
+            <span>issues, chart suggestions, and self-hosting instructions</span>
+          </span>
         </div>
       </div>
 
       <div class="col-sm mb-3">
-        <a href="https://www.bitrefill.com/?utm_source=transactionfee_info" class="umami--click--footer-bitrefill-ad">
-          <img height=48 src="/img/bitrefill-logo.svg" alt="Bitrefill - Buy gift cards with Bitcoin">
-          <br>
-          <span class="text-muted">Buy gift cards with Bitcoin</span>
-        </a>
+        {{ .Site.Params.HtmlBottomRight | safeHTML }}
       </div>
 
     </div>

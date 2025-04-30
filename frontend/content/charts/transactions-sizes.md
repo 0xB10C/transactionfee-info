@@ -19,4 +19,4 @@ This chart previously showed the median transaction size.
 This was changed in July 2024. If the median transaction size is an
 important metric to you, feel free to open an [issue on GitHub].
 
-[issue on GitHub]: https://github.com/0xB10C/transactionfee-info/issues
+[issue on GitHub]: https://github.com/0xB10C/mainnet-observer/issues
