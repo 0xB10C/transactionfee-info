@@ -1,4 +1,4 @@
-# transactionfee-info
+# mainnet-observer
 
 This tool and website provides protocol-level statistics and insights about Bitcoin: blocks, transactions, script usage and more.
 Powered by a Rust backend and Hugo-based frontend.
@@ -23,7 +23,7 @@ Note that a full run on mainnet will take multiple hours. The following runs wil
 will only need to fetch new blocks.
 
 ```
-Usage: transactionfee-info-backend [OPTIONS]
+Usage: mainnet-observer-backend [OPTIONS]
 
 Options:
       --rest-host <REST_HOST>          Host part of the Bitcoin Core REST API endpoint [default: localhost]
@@ -46,8 +46,18 @@ For development, Hugo can be used to launch an auto-refreshing websever with `hu
 It will display the URL its serving the page on. A production deployment can use `hugo build` to generate
 a static HTML page in `public`. See the hugo tool for more build options.
 
+To set the site title, base URL, and fill in some of the placeholders, either edit `frontend/config.toml`
+or set the following ENV variables.
+
+```
+export HUGO_TITLE="mainnet-observer"
+export HUGO_BASEURL="https://mainnet.observer/"
+export HUGO_PARAMS_HTMLTOPRIGHT="HTML that appears in the <b>top right</b> corner"
+export HUGO_PARAMS_HTMLBOTTOMRIGHT="HTML that appears in the <b>bottom right</b> corner"
+```
+
 ## Nix package and NixOS module
 
-There exists a Nix package and a NixOS module for transactionfee-info in https://github.com/0xb10c/nix.
-See the [integration-test](https://github.com/0xB10C/nix/blob/master/tests/transactionfee-info.nix) for
+There exists a Nix package and a NixOS module for mainnet-observer in https://github.com/0xb10c/nix.
+See the [integration-test](https://github.com/0xB10C/nix/blob/master/tests/mainnet-observer.nix) for
 an example usage of the frontend and backend.
