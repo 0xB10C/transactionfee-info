@@ -43,7 +43,7 @@
 <script>
   const chartPNGFileName = "{{ .Page.File.TranslationBaseName }}.png";
   const isDevBuild = {{ if .Site.BuildDrafts }} true {{ else }} false {{ end }};
-  const watermarkText = "watermark"
+  const watermarkText = "{{ .Site.Title }}"
 </script>
 
 <script src="/js/echarts.min.js" integrity="sha512-XSmbX3mhrD2ix5fXPTRQb2FwK22sRMVQTpBP2ac8hX7Dh/605hA2QDegVWiAvZPiXIxOV0CbkmUjGionDpbCmw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
