@@ -5,7 +5,7 @@ Tags{{ if gt (len .) 1 }}{{ end }}:
 {{ range $index, $tag := . }}
 {{- if gt $index 0 }}, {{ end -}}
 {{ with $.Site.GetPage (printf "/%s/%s" $taxo $tag) -}}
-<a href="{{ .Permalink }}" class="umami--click--tag-{{ $tag | urlize}}">{{ $tag }}</a>
+<a href="{{ .Permalink }}">{{ $tag }}</a>
 {{- end -}}
 {{- end -}}
 {{ end }}
