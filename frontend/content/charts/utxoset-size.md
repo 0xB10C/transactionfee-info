@@ -1,6 +1,6 @@
 ---
 title: "UTXO count"
-draft: true
+draft: false
 author: "0xb10c"
 categories: UTXO set
 categories_weight: 0
@@ -15,4 +15,4 @@ Shows the UTXO set size over time.
 
 <!--more-->
 
-Note that this does not include OP_RETURN outputs.
+Note that OP_RETURN outputs are not part of the UTXO set.

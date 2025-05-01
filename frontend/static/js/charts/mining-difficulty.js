@@ -23,7 +23,7 @@ function preprocess(input) {
 }
 
 function chartDefinition(d, movingAverage) {
-    const EXTRA = {
+  const EXTRA = {
     tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
     yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
   }

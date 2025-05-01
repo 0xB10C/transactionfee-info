@@ -212,7 +212,7 @@ function doubleLineChart(d, NAMES, movingAverage, PRECISION, START_DATE, ANNOTAT
   }
 }
 
-// stacked area chart
+// stacked area chart with values from 0 to 100
 // expects date, and multiple DATA_KEYS entries
 function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS = []) {
   if (DATA_KEYS.length != NAMES.length) {
@@ -224,6 +224,28 @@ function stackedAreaPercentageChart(d, DATA_KEYS, NAMES, movingAverage, PRECISIO
     tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
     xAxis: { type: "time", data: d.date },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: formatPercentage } },
+    series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
+      return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, calcMovingAverage(d[key], movingAverage, PRECISION)), symbol: "none"}
+    }).concat(
+    [
+      // Annotations:
+      { type: "line", markLine: { symbol: "none", label:{show: showAnnotations, position:"insideEndTop", backgroundColor: "transparent"}, lineStyle: { color: showAnnotations ? "gray": "transparent", type: "dotted" }, data: ANNOTATIONS.map(a => { return { xAxis: a.date, label: { formatter: a.text }} } ) } }
+    ]),
+  }
+}
+
+// stacked area chart
+// expects date, and multiple DATA_KEYS entries
+function stackedAreaChart(d, DATA_KEYS, NAMES, movingAverage, PRECISION, START_DATE, ANNOTATIONS = []) {
+  if (DATA_KEYS.length != NAMES.length) {
+    alert("DATA_KEYS length does not match NAMES length!");
+    return
+  }
+  return {
+    ...BASE_CHART_OPTION(START_DATE),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: "time", data: d.date },
+    yAxis: { type: 'value', axisLabel: { formatter: (v) => formatWithSIPrefix(v, "") } },
     series: zip(NAMES, DATA_KEYS).map(([name, key]) => {
       return { name: name, smooth: true, areaStyle: {}, lineStyle: {width: 0}, stack: "Total", type: 'line', data: zip(d.date, calcMovingAverage(d[key], movingAverage, PRECISION)), symbol: "none"}
     }).concat(
