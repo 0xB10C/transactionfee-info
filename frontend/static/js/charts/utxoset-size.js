@@ -30,5 +30,8 @@ function preprocess(input) {
 }
 
 function chartDefinition(d, movingAverage) {
-  return lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
+  let option = lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
+  option.tooltip["valueFormatter"] = (v) => formatWithSIPrefix(v, "")
+  option.yAxis.axisLabel = {formatter: (v) => formatWithSIPrefix(v, "")}
+  return option
 }
