@@ -1,6 +1,6 @@
 const ANNOTATIONS = [annotationChinaMiningBan]
 const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_7D
-const NAME = "hashrate"
+const NAME = "difficulty"
 const PRECISION = 0
 let START_DATE =  new Date("2009-01-01");
 const UNIT = ""
@@ -24,7 +24,7 @@ function preprocess(input) {
 
 function chartDefinition(d, movingAverage) {
   const EXTRA = {
-    tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
+    tooltip: { trigger: 'axis', valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
     yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
   }
   let option = lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
