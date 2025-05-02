@@ -23,8 +23,6 @@ function preprocess(input) {
 
 function chartDefinition(d, movingAverage) {
   let option = lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
-  const EXTRA = {
-    yAxis: { min: 0, max: 5, },
-  }
-  return {...option, ...EXTRA};
+  option.yAxis["min"] = 0
+  option.yAxis["max"] = 5
 }

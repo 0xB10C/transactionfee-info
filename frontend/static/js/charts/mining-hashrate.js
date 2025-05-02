@@ -30,7 +30,7 @@ function preprocess(input) {
 
 function chartDefinition(d, movingAverage) {
   const EXTRA = {
-    tooltip: { valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
+    tooltip: { trigger: 'axis', valueFormatter: (v) => formatWithSIPrefix(v, UNIT)},
     yAxis: { axisLabel: {formatter: (v) => formatWithSIPrefix(v, UNIT) } },
   }
   let option = lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
