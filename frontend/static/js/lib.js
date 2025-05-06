@@ -64,6 +64,7 @@ const tooltipPosition = function (pos, _params, _el, _elRect, size) {
 
 const BASE_CHART_OPTION = (START_DATE) => {
   return {
+    backgroundColor: 'white',
     grid: {
       left: "7%",
       right: "0%",
