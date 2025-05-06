@@ -66,7 +66,7 @@ const BASE_CHART_OPTION = (START_DATE) => {
   return {
     grid: {
       left: "7%",
-      right: "7%",
+      right: "0%",
     },
     graphic: watermark(watermarkText),
     legend: { },
