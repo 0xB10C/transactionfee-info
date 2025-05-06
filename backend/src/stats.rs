@@ -379,7 +379,7 @@ impl TxStats {
                 s.tx_timelock_timestamp += 1;
             }
 
-            if tx.lock_time.to_consensus_u32() > 0 && tx.is_lock_time_enabled() {
+            if tx.lock_time.to_consensus_u32() > 0 && !tx.is_lock_time_enabled() {
                 s.tx_timelock_not_enforced += 1;
             }
 
@@ -933,7 +933,7 @@ mod tests {
                 tx_spending_newly_created_utxos: 9,
                 tx_timelock_height: 6,
                 tx_timelock_timestamp: 1,
-                tx_timelock_not_enforced: 6,
+                tx_timelock_not_enforced: 1,
                 tx_timelock_too_high: 0,
             },
             input: InputStats {
@@ -1102,7 +1102,7 @@ mod tests {
                 tx_spending_newly_created_utxos: 110,
                 tx_timelock_height: 209,
                 tx_timelock_timestamp: 0,
-                tx_timelock_not_enforced: 187,
+                tx_timelock_not_enforced: 22,
                 tx_timelock_too_high: 0,
             },
             input: InputStats {
@@ -1271,7 +1271,7 @@ mod tests {
                 tx_spending_newly_created_utxos: 45,
                 tx_timelock_height: 1,
                 tx_timelock_timestamp: 0,
-                tx_timelock_not_enforced: 1,
+                tx_timelock_not_enforced: 0,
                 tx_timelock_too_high: 0,
             },
             input: InputStats {
