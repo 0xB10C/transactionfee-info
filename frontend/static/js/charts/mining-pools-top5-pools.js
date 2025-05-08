@@ -35,7 +35,7 @@ function preprocess(input) {
 function chartDefinition(d, movingAverage) {
   return {
     ...BASE_CHART_OPTION(START_DATE),
-    xAxis: { type: "" },
+    xAxis: { type: "time" },
     yAxis: { type: 'value', min: 0, axisLabel: { formatter: formatPercentage } },
     tooltip: { trigger: 'axis', valueFormatter: formatPercentage},
     series: d.names.map((n) => {
