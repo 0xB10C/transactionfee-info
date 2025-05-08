@@ -161,7 +161,8 @@ function saveThumbnail() {
     })
   });
   const canvas = chart.getRenderedCanvas({
-    backgroundColor: '#ffffff',
+    // If the chart had a background color, use it. Otherwise, use white.
+    backgroundColor: chart.getOption().backgroundColor ? chart.getOption().backgroundColor : 'white',
     pixelRatio: 2
   });
 
@@ -278,9 +279,12 @@ window.onload = function () {
 
     // keep the start date the same as the current chart when the moving average is changed
     let xAxisModel = chart.getModel().getComponent('xAxis', 0);
-    let xExtent = xAxisModel.axis.scale.getExtent();
-    let currentStartDate = xExtent[0];
-    option.dataZoom[0].startValue = currentStartDate
+    // might not be set on e.g. Pie charts
+    if (xAxisModel) {
+      let xExtent = xAxisModel.axis.scale.getExtent();
+      let currentStartDate = xExtent[0];
+      option.dataZoom[0].startValue = currentStartDate
+    }
     chart.setOption(option);
   });
 
