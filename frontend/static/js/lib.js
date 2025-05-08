@@ -112,20 +112,22 @@ async function draw(option) {
   chart.setOption(option);
 }
 
-function formatWithSIPrefix(value, unit="") {
+function formatWithSIPrefix(value, unit="", long = false) {
   const si = [
-    { value: 1e24, symbol: "Y" }, // yotta
-    { value: 1e21, symbol: "Z" }, // zetta
-    { value: 1e18, symbol: "E" }, // exa
-    { value: 1e15, symbol: "P" }, // peta
-    { value: 1e12, symbol: "T" }, // tera
-    { value: 1e9,  symbol: "G" }, // giga
-    { value: 1e6,  symbol: "M" }, // mega
-    { value: 1e3,  symbol: "k" }, // kilo
+    { value: 1e30, symbol: "Q", name: "quetta" },
+    { value: 1e27, symbol: "R", name: "ronna" },
+    { value: 1e24, symbol: "Y", name: "yotta" },
+    { value: 1e21, symbol: "Z", name: "zetta" },
+    { value: 1e18, symbol: "E", name: "exa" },
+    { value: 1e15, symbol: "P", name: "peta" },
+    { value: 1e12, symbol: "T", name: "tera" },
+    { value: 1e9,  symbol: "G", name: "giga" },
+    { value: 1e6,  symbol: "M", name: "mega" },
+    { value: 1e3,  symbol: "k", name: "kilo" },
   ];
   for (let i = 0; i < si.length; i++) {
     if (Math.abs(value) >= si[i].value) {
-      return (value / si[i].value).toFixed(1).replace(/\.0$/, '') + " " + si[i].symbol + unit;
+      return (value / si[i].value).toFixed(1).replace(/\.0$/, '') + " " + (long ? si[i].name : si[i].symbol) + unit;
     }
   }
   return `${value} ${unit}`
