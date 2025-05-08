@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationBitcoinCore23, annotationTaprootActivated]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES = ["key-path", "script-path"]
 const PRECISION = 1
 let START_DATE =  new Date("2021-11");

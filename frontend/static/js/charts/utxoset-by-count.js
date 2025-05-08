@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationP2SHActivation, annotationSegWitActivated, annotationTaprootActivated, annotationInscriptionsHype]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES =     ["P2PKH", "P2PK", "P2MS", "P2SH", "P2WSH", "P2WPKH", "P2TR", "P2A"]
 const DATA_KEYS = ["p2pkh", "p2pk", "p2ms", "p2sh", "p2wsh", "p2wpkh", "p2tr", "p2a"]
 const PRECISION = 0

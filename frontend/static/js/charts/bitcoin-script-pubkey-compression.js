@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationBitcoinCorev0_9, annotationBitcoinCorev0_11_1, annotationBitcoinCorev0_17]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES = ["Uncompressed (input)", "Compressed (input)", "Compressed (output)", "Uncompressed (output)"]
 const PRECISION = 1
 let START_DATE =  new Date("2009");

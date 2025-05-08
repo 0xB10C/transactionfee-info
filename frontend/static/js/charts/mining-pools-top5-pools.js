@@ -1,5 +1,5 @@
 const ANNOTATIONS = []
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const PRECISION = 2
 let START_DATE =  new Date();
 START_DATE.setFullYear(new Date().getFullYear() - 5);

@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased, annotationBitcoinCore23, annotationTaprootActivated]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES = ["P2WSH", "P2WPKH", "nested P2WSH", "nested P2WPKH", "P2TR key-path", "P2TR script-path"]
 const PRECISION = 1
 let START_DATE =  new Date("2017-08");
