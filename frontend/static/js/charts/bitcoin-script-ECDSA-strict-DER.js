@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationBIP66Activated]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES = ["DER encoded", "not DER encoded"]
 const PRECISION = 1
 let START_DATE =  new Date("2011");

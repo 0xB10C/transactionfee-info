@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationInscriptionsHype]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAME = "Transactions per block"
 const PRECISION = 0
 let START_DATE =  new Date("2013");

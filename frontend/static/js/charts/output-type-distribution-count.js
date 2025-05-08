@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationP2SHActivation, annotationSegWitActivated, annotationTaprootActivated]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES = ["P2PK", "P2PKH", "P2WPKH", "P2MS", "P2SH", "P2WSH", "P2TR", "OPRETURN", "P2A", "other"]
 const PRECISION = 1
 let START_DATE =  new Date("2016");

@@ -1,5 +1,5 @@
 const ANNOTATIONS = [annotationSegWitActivated, annotationBitcoinCoreSegWitWalletReleased]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES = ["legacy only", "mixed", "SegWit only"]
 const PRECISION = 1
 let START_DATE =  new Date("2017");

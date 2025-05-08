@@ -31,7 +31,7 @@ const annotationRunestones = {'text': 'Runestones', 'date': '2024-04-21'}
 
 const MOVING_AVERAGE_1D = 1
 const MOVING_AVERAGE_7D = 7
-const MOVING_AVERAGE_31D = 31
+const MOVING_AVERAGE_30D = 30
 const MOVING_AVERAGE_90D = 90
 
 const zip = (a, b) => a.map((k, i) => [k, b[i]]);

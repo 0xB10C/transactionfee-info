@@ -1,5 +1,5 @@
 const ANNOTATIONS = [{'text': 'BIP-68 Activation', 'date': '2016-07-04'}]
-const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_31D
+const MOVING_AVERAGE_DAYS = MOVING_AVERAGE_30D
 const NAMES = ["v1", "v2", "v3", "unknown version"]
 const PRECISION = 1
 let START_DATE =  new Date("2016");
