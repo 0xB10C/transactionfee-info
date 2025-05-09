@@ -4,7 +4,7 @@ draft: false
 author: "0xb10c"
 categories: Outputs
 categories_weight: 0
-tags: [runestone, op_return]
+tags: [runestone, op_return, metaprotocol]
 thumbnail: outputs-runestone.png
 chartJS: outputs-runestone.js
 images:
