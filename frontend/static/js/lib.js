@@ -27,7 +27,7 @@ const annotationASICsAvaliable = {'text': 'First ASIC miners avaliable', 'date':
 const annotationGPUMinerAvaliable = {'text': 'First GPU miners avaliable', 'date': '2010-07-01'}
 const annotationP2SHActivation = {'text': 'P2SH Activation', 'date': '2012-04-01'}
 const annotationInscriptionsHype = {'text': 'Inscriptions hype', 'date': '2023-04-15'}
-const annotationRunestones = {'text': 'Runestones', 'date': '2024-04-21'}
+const annotationRunestones = {'text': 'Runestones launch', 'date': '2024-04-21'}
 
 const MOVING_AVERAGE_1D = 1
 const MOVING_AVERAGE_7D = 7
