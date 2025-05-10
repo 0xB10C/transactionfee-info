@@ -20,5 +20,25 @@
         </section>
         {{end}} {{end}}
     </section>
+
+    {{ if .Site.BuildDrafts }}
+    <script>
+        chartURLs = [
+        {{- range where .Site.RegularPages "Section" "charts" -}}
+            "{{ .Permalink | safeHTML}}",
+        {{ end -}}
+        ];
+
+        function massGenerateThumbnails() {
+            for(url of chartURLs) {
+                window.open(url+"?thumbnail");
+            }
+        }
+    </script>
+    <button onclick="massGenerateThumbnails()">
+        generate chart-thumbnails
+    </button>
+    {{ end }}
+
 </article>
 {{end}}
