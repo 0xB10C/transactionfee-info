@@ -25,4 +25,5 @@ function chartDefinition(d, movingAverage) {
   let option = lineChart(d, NAME, movingAverage, PRECISION, START_DATE, ANNOTATIONS);
   option.yAxis["min"] = 0
   option.yAxis["max"] = 5
+  return option
 }
