@@ -1,8 +1,7 @@
 {{ define "main"}}
-<article class="">
-
+<article>
     <header class="my-4">
-        <h1 class="display-6 my-3">Bitcoin Blockchain Statistics</h1>
+        <h2>Bitcoin Blockchain Statistics</h2>
         <p>{{.Content }}</p>
     </header>
 
@@ -14,7 +13,7 @@
                 {{ partial "h2.html" .Title }}
             </header>
             {{range (.Data.Pages.ByParam "position") }}
-            <section class="col-12 col-md-6 col-lg-4 mb-3">
+            <section class="col-12 col-md-4 col-lg-3 mb-3">
                 {{ partial "chart-card.html" .}}
             </section>
             {{end}}

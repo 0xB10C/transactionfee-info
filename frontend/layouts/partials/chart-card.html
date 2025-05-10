@@ -1,6 +1,7 @@
 <section class="card shadow-sm bg-white chart-card">
-    <img class="card-img-top" width="100%" style="border-bottom: 1px solid #eeeeee;" loading="lazy"
-        src="/img/chart-thumbnails/{{.Params.thumbnail}}"></img>
+    <div class="card-img-top ratio ratio-16x9 border-bottom">
+        <img class="rounded-top" style="image-rendering: pixelated; object-fit: cover; background-color: red;" src="/img/chart-thumbnails/{{.Params.thumbnail}}"></img>
+    </div>
     <div class="card-body pt-2">
         <h5 style="color: #292929;" class="my-1">{{.Title | plainify}}</h5>
         <span class="card-text">{{ .Summary | plainify}}</span> {{- if .Draft -}}<span class="card-text"
