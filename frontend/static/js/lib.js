@@ -66,8 +66,9 @@ const BASE_CHART_OPTION = (START_DATE) => {
   return {
     backgroundColor: 'white',
     grid: {
-      left: "7%",
-      right: "0%",
+      left: 0,
+      right: 0,
+      containLabel: true,
     },
     graphic: watermark(watermarkText),
     legend: { },
@@ -266,6 +267,13 @@ function stackedAreaChart(d, DATA_KEYS, NAMES, movingAverage, PRECISION, START_D
     ]),
   }
 }
+
+// on windown resize, resize the chart
+window.addEventListener("resize", (event) => { 
+  if (chart) {
+    chart.resize()
+  }
+})
 
 window.onload = function () {
   currentMovingAverage = MOVING_AVERAGE_DAYS
