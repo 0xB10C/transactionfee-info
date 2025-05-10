@@ -29,10 +29,6 @@ function chartDefinition(d, movingAverage) {
   y2 = zip(d.date, calcMovingAverage(d.y2, movingAverage, PRECISION))
   return {
     ...BASE_CHART_OPTION(START_DATE),
-    grid: {
-      left: "7%",
-      right: "7%",
-    },
     xAxis: { type: "time", data: d.date },
     yAxis: [
       {
