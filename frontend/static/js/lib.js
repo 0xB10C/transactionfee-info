@@ -164,7 +164,7 @@ function saveThumbnail() {
   const canvas = chart.getRenderedCanvas({
     // If the chart had a background color, use it. Otherwise, use white.
     backgroundColor: chart.getOption().backgroundColor ? chart.getOption().backgroundColor : 'white',
-    pixelRatio: 2
+    pixelRatio: 1
   });
 
   const link = document.createElement('a');
@@ -300,5 +300,12 @@ window.onload = function () {
     processedData = preprocess(data)
     let option = chartDefinition(processedData, currentMovingAverage)
     draw(option)
+
+    const paramsString = window.location.search;
+    const searchParams = new URLSearchParams(paramsString);
+    if (searchParams.has("thumbnail")) {
+      saveThumbnail()
+      window.close()
+    }
   });
 }

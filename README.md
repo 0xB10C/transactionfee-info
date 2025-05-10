@@ -56,6 +56,17 @@ export HUGO_PARAMS_HTMLTOPRIGHT="HTML that appears in the <b>top right</b> corne
 export HUGO_PARAMS_HTMLBOTTOMRIGHT="HTML that appears in the <b>bottom right</b> corner"
 ```
 
+### Generate Chart Thumbnails
+
+The chart thumbnails are PNGs that need to be updated from time to time.
+When hugo is started in `draft` mode, for example with `hugo serve -D`, on bottom of
+the main page a "generate chart-thumbnails" button appears. Before clicking on this, make sure
+you have up-to-date CSV files for the chart data. Clicking on the butten will open all chart
+pages and will automatically generate and download thumbnails as PNGs. You might need to allow the
+page to open "popup windows". Once all thumbnails are downloaded, remove the existing thumbnails in
+`frontend/static/img/chart-thumbnails` and copy the newly downloaded thumbnails. Don't forget to run
+`optipng frontend/static/img/chart-thumbnails/*` on them before adding them to Git.
+
 ## Nix package and NixOS module
 
 There exists a Nix package and a NixOS module for mainnet-observer in https://github.com/0xb10c/nix.
