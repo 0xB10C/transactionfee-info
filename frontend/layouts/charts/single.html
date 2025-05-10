@@ -3,7 +3,7 @@
   
   <header class="row">
     <h2 class="col-12">{{ .Title }}</h2>
-    <span class="lead col-12">{{ .Summary | plainify  }}</span>
+    <span class="col-12">{{ .Summary | plainify  }}</span>
   </header>
 
   <section>
@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div id="chart" class="row-0" style="height: 650px; width: 100%;"></div>
+    <div id="chart" style="height: 650px; width: 100%;"></div>
 
     <p class="row m-1">
       {{ $body := replace .Content .Summary "" }} {{ $body | safeHTML }}
